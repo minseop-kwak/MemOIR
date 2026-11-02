@@ -145,7 +145,6 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .hero-thesis strong { color: var(--ink); font-weight: 600; }
 .hero-thesis .arr { color: var(--accent); }
 
-.authors { margin-top: 22px; }
 
 .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
 
@@ -567,3 +566,19 @@ code { font-family: var(--font-mono); font-size: .86em; }
 
 footer { padding-block: 40px 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 footer .wrap { display: flex; justify-content: center; }
+
+/* ---------- authors ---------- */
+
+.authors { margin-top: 24px; }
+.author-list { margin: 0; font-size: 16.5px; line-height: 1.75; color: var(--ink); }
+.author-list a {
+  text-decoration: none;
+  background: linear-gradient(var(--accent-mark), var(--accent-mark)) 0 100% / 100% 0 no-repeat;
+  transition: background-size .15s;
+}
+.author-list a:hover { background-size: 100% 40%; }
+.author-list sup, .affils sup { color: var(--accent-ink); font-weight: 600; font-size: .68em; margin-left: 1px; }
+.affils { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+
+/* overview summary video sits between the header and the step cards */
+.explainer.summary { margin-bottom: 28px; }

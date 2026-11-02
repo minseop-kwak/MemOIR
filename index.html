@@ -35,8 +35,22 @@
           <strong>real video</strong>, consistent over a minute.
         </p>
 
-        <!-- TODO: authors and affiliations -->
-        <p class="authors ph-text">Authors and affiliations</p>
+        <div class="authors">
+          <p class="author-list">
+            <a href="https://mskwak01.github.io">Min-Seop Kwak</a><sup>3</sup>,
+            <a href="https://hyelinnam.github.io">Hyelin Nam</a><sup>1</sup>,
+            <a href="https://devinluo27.github.io">Yunhao Luo</a><sup>1</sup>,
+            <a href="https://abbaraju7.github.io">Praveen Abbaraju</a><sup>2</sup>,
+            <span>Subrata Kumar Kundu</span><sup>2</sup>,
+            <a href="https://cvlab.kaist.ac.kr/">Seungryong Kim</a><sup>3</sup>,
+            <a href="https://jjparkcv.github.io">Jeong Joon Park</a><sup>1</sup>
+          </p>
+          <p class="affils">
+            <span><sup>1</sup>University of Michigan, Ann Arbor</span>
+            <span><sup>2</sup>Astemo Americas, Inc.</span>
+            <span><sup>3</sup>KAIST</span>
+          </p>
+        </div>
 
         <div class="links">
           <!-- TODO: arXiv link -->
@@ -77,6 +91,9 @@
         Video generative models promise driving simulators that can render arbitrary traffic scenarios, but this requires both precise control over the scene and consistency across long rollouts. Existing driving generators condition only on traffic participants and road layout, leaving the static world, and with it the ego motion, underspecified, while frame-level memories grow quickly and cannot tell which cached tokens belong to which instance. We present MemOIR, a driving video diffusion model conditioned on a view-space blocks-world representation that renders every dynamic and static instance as a 3D block encoding its class, identity, and occlusion, curated automatically from raw driving videos. This representation densely specifies both agent motion and the ego trajectory, and enables object-level KV caching: each instance's tokens are cached from its most complete observations and re-embedded where its block projects when it reappears, attending to far fewer tokens than frame-level caching. MemOIR achieves the most accurate instance placement and ego-motion control among driving generators with competitive visual quality, faithfully places vehicles performing unseen maneuvers such as spin-outs, and substantially improves the identity consistency of returning vehicles.
       </p>
     </div>
+
+    <!-- TODO: summary video of the whole project -->
+    <div class="explainer summary" data-src="videos/explainer/00-summary.mp4" data-label="Summary video · MemOIR end to end"></div>
 
     <ol class="steps">
       <li>
@@ -272,9 +289,10 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <h2 class="sec-title">BibTeX</h2>
     <div class="bib">
       <button class="copy" type="button">Copy</button>
-<pre><code>@article{memoir2026,
+<pre><code>@article{kwak2026memoir,
   title   = {MemOIR: Driving Video Generation from View-Space Blocks World with Object-Level Memory},
-  author  = {TODO: author list},
+  author  = {Kwak, Min-Seop and Nam, Hyelin and Luo, Yunhao and Abbaraju, Praveen and
+             Kundu, Subrata Kumar and Kim, Seungryong and Park, Jeong Joon},
   journal = {arXiv preprint arXiv:TODO},
   year    = {2026}
 }</code></pre>
