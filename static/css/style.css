@@ -582,3 +582,6 @@ footer .wrap { display: flex; justify-content: center; }
 
 /* overview summary video sits between the header and the step cards */
 .explainer.summary { margin-bottom: 28px; }
+.author-list sup .fn { margin-left: 1px; }
+.footnote { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.footnote sup { color: var(--accent-ink); font-weight: 600; margin-right: 2px; }
