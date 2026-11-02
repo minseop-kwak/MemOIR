@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MemOIR</title>
+  <meta name="description" content="MemOIR: driving video generation from a view-space blocks world with object-level memory. Real video to an editable code world, scenario editing, and long-horizon rendering back to real video.">
   <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
@@ -11,121 +12,188 @@
 <header class="hero">
   <div class="wrap">
     <h1><span class="name">MemOIR</span>: Driving Video Generation from View-Space Blocks World with Object-Level Memory</h1>
-    <!--
-    <div class="links">
-      <a class="btn is-disabled" href="#" aria-disabled="true">Paper</a>
-      <a class="btn is-disabled" href="#" aria-disabled="true">Supplementary</a>
-    </div>
-    -->
 
-    <!-- Teaser hidden for now: drag to wipe between blocks-world condition and generated video.
-    <div class="wipe" data-canvas="videos/teaser/canvas.mp4" data-gen="videos/teaser/generated.mp4"></div>
-    <div class="legend" aria-label="Blocks-world color code">
-      <span><i style="--c:var(--c-vehicle)"></i>Vehicle</span>
-      <span><i style="--c:var(--c-ped)"></i>Pedestrian</span>
-      <span><i style="--c:var(--c-cyclist)"></i>Cyclist</span>
-      <span><i style="--c:var(--c-building)"></i>Building</span>
-      <span><i style="--c:var(--c-veg)"></i>Vegetation</span>
-      <span><i style="--c:var(--c-sign)"></i>Traffic sign</span>
+    <!-- TODO: authors and affiliations -->
+    <p class="authors ph-text">Authors and affiliations</p>
+
+    <div class="links">
+      <!-- TODO: arXiv link -->
+      <a class="btn is-disabled" href="#" aria-disabled="true">Paper (arXiv soon)</a>
+      <a class="btn" href="https://github.com/minseop-kwak/MemOIR">Code</a>
     </div>
-    <p class="ph-text">Teaser caption</p>
-    -->
+
+    <p class="pipeline">
+      <a href="#real2sim"><b>Real video</b></a>
+      <span aria-hidden="true">→</span>
+      <a href="#manipulate"><b>Code world</b></a>
+      <span aria-hidden="true">→</span>
+      <a href="#sim2real"><b>Real video</b></a>
+    </p>
+
+    <!-- TODO: teaser clip. Drag to wipe between blocks-world condition and generated video. -->
+    <div class="wipe" data-canvas="videos/teaser/canvas.mp4" data-gen="videos/teaser/generated.mp4"></div>
   </div>
 </header>
 
 <nav class="toc">
   <div class="wrap">
-    <!-- <a href="#abstract">Abstract</a> -->
-    <!-- <a href="#method">Method</a> -->
-    <a href="#normal">Normal</a>
-    <a href="#counterfactual">Counterfactual</a>
-    <a href="#consistency">Consistency</a>
-    <!-- <a href="#appearance">Appearance</a> -->
-    <!-- <a href="#freeview">Free-View</a> -->
-    <!-- <a href="#pedestrian">Pedestrian</a> -->
-    <a href="#ablations">Ablations</a>
-    <!-- <a href="#bibtex">BibTeX</a> -->
+    <a href="#abstract">Abstract</a>
+    <a href="#real2sim">1 · Real → Sim</a>
+    <a href="#manipulate">2 · Manipulate</a>
+    <a href="#sim2real">3 · Sim → Real</a>
+    <a href="#bibtex">BibTeX</a>
   </div>
 </nav>
 
 <main class="wrap">
 
-  <!-- Hidden for submission (results only); restore for camera-ready.
   <section id="abstract">
     <h2>Abstract</h2>
-    <div class="ph-text block">Abstract</div>
+    <p class="abstract">
+      Video generative models promise driving simulators that can render arbitrary traffic scenarios, but this requires both precise control over the scene and consistency across long rollouts. Existing driving generators condition only on traffic participants and road layout, leaving the static world, and with it the ego motion, underspecified, while frame-level memories grow quickly and cannot tell which cached tokens belong to which instance. We present MemOIR, a driving video diffusion model conditioned on a view-space blocks-world representation that renders every dynamic and static instance as a 3D block encoding its class, identity, and occlusion, curated automatically from raw driving videos. This representation densely specifies both agent motion and the ego trajectory, and enables object-level KV caching: each instance's tokens are cached from its most complete observations and re-embedded where its block projects when it reappears, attending to far fewer tokens than frame-level caching. MemOIR achieves the most accurate instance placement and ego-motion control among driving generators with competitive visual quality, faithfully places vehicles performing unseen maneuvers such as spin-outs, and substantially improves the identity consistency of returning vehicles.
+    </p>
   </section>
 
-  <section id="method">
-    <h2>Method</h2>
-    <div class="img-slot" data-src="images/method_pipeline.png" data-label="Figure: Video-to-blocks pipeline + control branch"></div>
-    <p class="ph-text">Method caption</p>
-    <div class="img-slot" data-src="images/method_kv_cache.png" data-label="Figure: Instance-level KV caching"></div>
-    <p class="ph-text">KV caching caption</p>
-  </section>
-  -->
+  <!-- ===================================================== 1. Real -> Sim -->
+  <section id="real2sim">
+    <p class="kicker">Part 1</p>
+    <h2>Real → Sim: From Driving Video to a Code Blocks World</h2>
 
-  <section id="normal">
-    <h2>Normal Driving Scenarios</h2>
-    <p class="desc">15-second clips from the nuScenes validation set.</p>
-    <div class="compare" data-set="normal"></div>
+    <!-- TODO: explanation video for part 1 -->
+    <div class="explainer" data-src="videos/explainer/01-real2sim.mp4" data-label="Explanation video · Real → Sim"></div>
+
+    <p class="lead">
+      <b>SceneClaw</b> turns a raw dashcam video into a complete 4D blocks world. It is a closed-loop LLM agent that works in a stateful Python kernel and uses only off-the-shelf models and code: nothing it relies on is trained by us, and it uses no ground-truth labels or poses at inference.
+    </p>
+
+    <div class="cols">
+      <div class="card">
+        <h4>Perceive</h4>
+        <ul>
+          <li><b>Depth Anything 3</b> (multi-view): metric depth and camera poses estimated from the video</li>
+          <li><b>Mask2Former</b> panoptic segmentation and <b>Mapillary Vistas</b> lane markings</li>
+          <li><b>SAM3</b> text-prompted video tracking of vehicles, people, traffic lights, signs, poles, buildings and walls</li>
+          <li><b>WildDet3D</b> 3D vehicle detection, with depth within 3–6% of ground truth out to 70 m</li>
+          <li><b>RTMPose</b> pedestrian skeletons aligned to their boxes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Check and fix</h4>
+        <ul>
+          <li>The agent compares its world against image overlays and a bird's-eye view at several scales, including far-range sky and road checks, and repairs what does not match.</li>
+          <li>A final overlay check on the first, an intermediate and the last frame closes the loop.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Output: one program</h4>
+        <ul>
+          <li><b>Static world</b> in the world frame: one aligned slab per building with street-side facade strips, walls, vegetation crowns, lane and road lines, poles, signs, and traffic lights with symbolic content.</li>
+          <li><b>Agents</b>, each with one id, one size and a trajectory, plus per-frame traffic-light states.</li>
+          <li>Every run ends as a single editable Python file, <code>scene_world.py</code>, rendered by one universal renderer. The round trip stays within 10 cm / 7° and 0.6% of pixels.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Results</h3>
+    <p class="desc">Each video shows the input camera, the reconstructed blocks world, and bird's-eye views at near and far range. Waymo Open and Argoverse 2 clips.</p>
+    <div class="compare" data-set="sceneclaw"></div>
   </section>
 
-  <section id="counterfactual">
-    <h2>Counterfactual Scenarios</h2>
-    <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers.</p>
+  <!-- ===================================================== 2. Manipulate -->
+  <section id="manipulate">
+    <p class="kicker">Part 2</p>
+    <h2>Manipulate: Editing the Code World</h2>
+
+    <!-- TODO: explanation video for part 2 -->
+    <div class="explainer" data-src="videos/explainer/02-manipulate.mp4" data-label="Explanation video · Manipulate"></div>
+
+    <p class="lead">
+      Because every scene is a program, a new scenario is a few lines of code. Each agent is a route with a timing table, and a chainable scenario API changes when and how it moves. Static elements (buildings, trees, lines, traffic lights) are plain lists that can be edited directly. The edited world renders through the same renderer and becomes the condition for Part 3.
+    </p>
+
+    <div class="codeblock">
+      <span class="codeblock-tag">scene_world.py · illustrative edit</span>
+<pre><code><span class="c"># every agent: a route (xyz polyline) and timing {frame: metres along the route}</span>
+car = scene.car(<span class="s">"veh017"</span>, kind, size, route=[...], timing={...})
+
+car.set_speed(<span class="n">8.0</span>, from_t=<span class="n">40</span>)                  <span class="c"># slow down from frame 40</span>
+car.stop(at_t=<span class="n">60</span>, decel=<span class="n">3.0</span>)                  <span class="c"># brake to a stop</span>
+car.delay(<span class="n">15</span>)                                 <span class="c"># arrive 15 frames later</span>
+car.lane_change(<span class="n">3.5</span>, t0=<span class="n">50</span>, t1=<span class="n">80</span>)            <span class="c"># move one lane to the left</span>
+car.place(t, x, y); car.reroute([...]); car.span(t0, t1)
+
+scene.clone(<span class="s">"veh017"</span>, <span class="s">"veh900"</span>).delay(<span class="n">30</span>)      <span class="c"># add a follower</span>
+scene.remove(<span class="s">"ped045"</span>)                         <span class="c"># clear a pedestrian</span></code></pre>
+    </div>
+
+    <h3>Code-World Edits</h3>
+    <p class="desc">The original reconstruction, the edited blocks world, and the generated video.</p>
+    <div class="compare" data-set="codeworld-edit"></div>
+
+    <h3>Counterfactual Maneuvers</h3>
+    <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers. MemOIR places the spinning vehicle correctly in 98.1% of frames.</p>
     <div class="compare" data-set="counterfactual"></div>
+
     <h3>Simulated Scenarios with Text-Prompted Events</h3>
     <p class="desc">CARLA highway scenarios (a car cutting in ahead; a car beside the ego losing control) converted to blocks-world conditions; the text prompt makes that car pour engine smoke as it drives.</p>
     <div class="compare" data-set="counterfactual-sim"></div>
   </section>
 
-  <section id="consistency">
-    <h2>Long-Horizon Instance Consistency</h2>
+  <!-- ===================================================== 3. Sim -> Real -->
+  <section id="sim2real">
+    <p class="kicker">Part 3</p>
+    <h2>Sim → Real: Long-Horizon Generation with Object-Level Memory</h2>
+
+    <!-- TODO: explanation video for part 3 -->
+    <div class="explainer" data-src="videos/explainer/03-sim2real.mp4" data-label="Explanation video · Sim → Real"></div>
+
+    <p class="lead">
+      A ControlNet-style control branch on a frozen Cosmos-Predict2.5-2B renders the blocks world back into real video. Videos are generated chunk by chunk, each chunk re-anchored on the last frame of the previous one. To keep instances consistent across chunks and after they leave the view, MemOIR keeps an <b>instance-level KV bank</b>.
+    </p>
+
+    <div class="cols">
+      <div class="card">
+        <h4>Cache per instance</h4>
+        <p>For each instance, keys and values are stored from its most visible observations, together with box-local 3D coordinates.</p>
+      </div>
+      <div class="card">
+        <h4>Re-embed on return</h4>
+        <p>When the instance reappears, its cached keys are re-embedded with rotary position at the location where its block projects in the new frame.</p>
+      </div>
+      <div class="card">
+        <h4>Attend to your own</h4>
+        <p>An instance-aware attention mask lets each query read only the memory of the instance that owns it.</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div><b>45.6%</b><span>re-identification of returning vehicles, up from at most 11.0%</span></div>
+      <div><b>98.1%</b><span>of frames with the spin-out vehicle placed correctly</span></div>
+      <div><b>~24×</b><span>fewer memory tokens than frame-level caching</span></div>
+      <div><b>40%</b><span>higher ego trajectory error without static instances</span></div>
+    </div>
+
+    <h3>Normal Driving Scenarios</h3>
+    <p class="desc">15-second clips from the nuScenes validation set.</p>
+    <div class="compare" data-set="normal"></div>
+
+    <h3>Long-Horizon Instance Consistency</h3>
     <p class="desc">Held-out nuPlan clips in which a target vehicle (green box) leaves the view and later returns.</p>
     <div class="compare" data-set="consistency"></div>
+
     <h3>Minute-Long Generation</h3>
     <p class="desc">55-second generations on held-out nuPlan test scenes. After about 20 s of real driving, the ego vehicle makes a U-turn and drives back along the same street in the opposite lane, so the buildings and parked cars passed on the way out are seen again from the other side. Every method starts from the same initial frame; MAGI-1 receives the same text caption and Epona the same ego trajectory.</p>
     <div class="compare" data-set="long-horizon"></div>
-  </section>
 
-  <section id="ablations">
-    <h2>Ablations</h2>
-    <h3>Instance-level KV Caching</h3>
+    <h3>Ablation: Instance-level KV Caching</h3>
     <p class="desc">Held-out Argoverse 2 and nuPlan clips generated as the memory components are added one at a time. The target vehicle (green box) must keep its appearance across generation chunks (Scene 1) or after leaving the view and returning (Scene 2).</p>
     <div class="compare" data-set="ablation-kv"></div>
-    <h3>Stationary Instances</h3>
+
+    <h3>Ablation: Stationary Instances</h3>
     <p class="desc">nuScenes validation scenes generated with and without stationary instances (buildings and vegetation) in the blocks-world condition. For this ablation, both models are trained from scratch for only 1,000 iterations, so the overall video quality is subpar; still, the two settings differ clearly in the speed and movement of the camera.</p>
     <div class="compare" data-set="ablation-stationary"></div>
   </section>
 
-  <!-- Hidden for now; restore when results are ready.
-  <section id="appearance">
-    <h2>Structure-Preserving Appearance Control</h2>
-    <p class="ph-text">Section description</p>
-    <div class="compare" data-set="appearance"></div>
-  </section>
-
-  <section id="freeview">
-    <h2>Free-View Generation</h2>
-    <p class="ph-text">Section description</p>
-    <div class="compare" data-set="freeview"></div>
-  </section>
-
-  <section id="pedestrian">
-    <h2>Pedestrian Pose Control</h2>
-    <p class="ph-text">Section description</p>
-    <div class="compare" data-set="pedestrian"></div>
-  </section>
-
-  <section id="ablation">
-    <h2>Ablations</h2>
-    <p class="ph-text">Section description</p>
-    <div class="compare" data-set="ablation"></div>
-  </section>
-  -->
-
-  <!-- Hidden for submission; restore for camera-ready.
   <section id="bibtex">
     <h2>BibTeX</h2>
     <div class="bib">
@@ -138,7 +206,6 @@
 }</code></pre>
     </div>
   </section>
-  -->
 
 </main>
 

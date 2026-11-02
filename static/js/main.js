@@ -4,6 +4,8 @@
  * A missing file just stays as a placeholder, so drop videos in and they appear.
  * A tab can override `rows`, and can set `events: [{ t: seconds, label }]`
  * to mark moments on the shared scrubber (e.g. a vehicle leaving / returning).
+ * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
+ * `native: true` to resize each slot to its video's own aspect once it loads.
  */
 const BASELINES = [
   ['trackdiffusion', 'TrackDiffusion'],
@@ -13,6 +15,31 @@ const BASELINES = [
 ];
 
 const SETS = {
+  /* Part 1: SceneClaw reconstructions (input | blocks world | BEV | far BEV in one video). */
+  sceneclaw: {
+    dir: 'videos/sceneclaw',
+    aspect: '4 / 1',
+    native: true,
+    tabs: [
+      { id: 'waymo-arterial', label: 'Waymo · Arterial' },
+      { id: 'waymo-busstop', label: 'Waymo · Bus Stop' },
+      { id: 'waymo-phx-allway', label: 'Waymo · All-Way Stop' },
+      { id: 'waymo-phx-intersection', label: 'Waymo · Intersection' },
+      { id: 'waymo-sf-hill', label: 'Waymo · SF Hill' },
+      { id: 'av2-pittsburgh', label: 'AV2 · Pittsburgh' },
+      { id: 'av2-miami', label: 'AV2 · Miami' },
+      { id: 'av2-detroit', label: 'AV2 · Detroit' },
+    ],
+    rows: [[['combo', 'Input Video | Blocks World | BEV | Far BEV']]],
+  },
+
+  /* Part 2: an edit of the exported scene_world.py, rendered and generated. */
+  'codeworld-edit': {
+    dir: 'videos/codeworld',
+    tabs: [{ id: 'edit-01', label: 'Edit 1' }],
+    rows: [[['before', 'Original Blocks World'], ['after', 'Edited Blocks World'], ['ours', 'MemOIR (Ours)']]],
+  },
+
   normal: {
     dir: 'videos/normal',
     tabs: [
@@ -301,6 +328,7 @@ function buildCompare(root) {
   const set = SETS[root.dataset.set];
   if (!set) return;
 
+  if (set.aspect) root.style.setProperty('--aspect', set.aspect);
   const tabs = el('div', 'tabs', { role: 'tablist' });
   const panels = el('div', 'panels');
   const bar = makeSyncBar();
@@ -347,6 +375,7 @@ function buildCompare(root) {
       if (!v) {
         v = makeVideo(fig.dataset.src, () => {
           fig.classList.add('is-loaded');
+          if (set.native && v.videoWidth) fig.style.setProperty('--aspect', `${v.videoWidth} / ${v.videoHeight}`);
           if (tab.events && v === group.master) group.setEvents(tab.events, v.duration);
         });
         fig.querySelector('.slot-media').prepend(v);
@@ -417,6 +446,20 @@ function buildWipe(root) {
   root.addEventListener('pointercancel', () => (dragging = false));
 }
 
+/* ---------- explanation videos (own controls, sound allowed) ---------- */
+
+function buildExplainer(root) {
+  const src = root.dataset.src;
+  root.append(placeholder(root.dataset.label || 'Explanation video', src));
+  const v = el('video');
+  v.controls = true;
+  v.playsInline = true;
+  v.preload = 'metadata';
+  v.addEventListener('loadedmetadata', () => root.classList.add('is-loaded'), { once: true });
+  v.src = src;
+  root.prepend(v);
+}
+
 /* ---------- static images ---------- */
 
 function buildImage(root) {
@@ -464,5 +507,6 @@ function buildToc(nav) {
 document.querySelectorAll('.toc').forEach(buildToc);
 document.querySelectorAll('.compare').forEach(buildCompare);
 document.querySelectorAll('.wipe').forEach(buildWipe);
+document.querySelectorAll('.explainer').forEach(buildExplainer);
 document.querySelectorAll('.img-slot').forEach(buildImage);
 document.querySelectorAll('.copy').forEach(buildCopy);
