@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>MemOIR</title>
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1><span class="name">MemOIR</span>: Driving Video Generation from View-Space Blocks World with Object-Level Memory</h1>
+    <!--
+    <div class="links">
+      <a class="btn is-disabled" href="#" aria-disabled="true">Paper</a>
+      <a class="btn is-disabled" href="#" aria-disabled="true">Supplementary</a>
+    </div>
+    -->
+
+    <!-- Teaser hidden for now: drag to wipe between blocks-world condition and generated video.
+    <div class="wipe" data-canvas="videos/teaser/canvas.mp4" data-gen="videos/teaser/generated.mp4"></div>
+    <div class="legend" aria-label="Blocks-world color code">
+      <span><i style="--c:var(--c-vehicle)"></i>Vehicle</span>
+      <span><i style="--c:var(--c-ped)"></i>Pedestrian</span>
+      <span><i style="--c:var(--c-cyclist)"></i>Cyclist</span>
+      <span><i style="--c:var(--c-building)"></i>Building</span>
+      <span><i style="--c:var(--c-veg)"></i>Vegetation</span>
+      <span><i style="--c:var(--c-sign)"></i>Traffic sign</span>
+    </div>
+    <p class="ph-text">Teaser caption</p>
+    -->
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <!-- <a href="#abstract">Abstract</a> -->
+    <!-- <a href="#method">Method</a> -->
+    <a href="#normal">Normal</a>
+    <a href="#counterfactual">Counterfactual</a>
+    <a href="#consistency">Consistency</a>
+    <!-- <a href="#appearance">Appearance</a> -->
+    <!-- <a href="#freeview">Free-View</a> -->
+    <!-- <a href="#pedestrian">Pedestrian</a> -->
+    <a href="#ablations">Ablations</a>
+    <!-- <a href="#bibtex">BibTeX</a> -->
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- Hidden for submission (results only); restore for camera-ready.
+  <section id="abstract">
+    <h2>Abstract</h2>
+    <div class="ph-text block">Abstract</div>
+  </section>
+
+  <section id="method">
+    <h2>Method</h2>
+    <div class="img-slot" data-src="images/method_pipeline.png" data-label="Figure: Video-to-blocks pipeline + control branch"></div>
+    <p class="ph-text">Method caption</p>
+    <div class="img-slot" data-src="images/method_kv_cache.png" data-label="Figure: Instance-level KV caching"></div>
+    <p class="ph-text">KV caching caption</p>
+  </section>
+  -->
+
+  <section id="normal">
+    <h2>Normal Driving Scenarios</h2>
+    <p class="desc">15-second clips from the nuScenes validation set.</p>
+    <div class="compare" data-set="normal"></div>
+  </section>
+
+  <section id="counterfactual">
+    <h2>Counterfactual Scenarios</h2>
+    <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers.</p>
+    <div class="compare" data-set="counterfactual"></div>
+    <h3>Simulated Scenarios with Text-Prompted Events</h3>
+    <p class="desc">CARLA highway scenarios (a car cutting in ahead; a car beside the ego losing control) converted to blocks-world conditions; the text prompt makes that car pour engine smoke as it drives.</p>
+    <div class="compare" data-set="counterfactual-sim"></div>
+  </section>
+
+  <section id="consistency">
+    <h2>Long-Horizon Instance Consistency</h2>
+    <p class="desc">Held-out nuPlan clips in which a target vehicle (green box) leaves the view and later returns.</p>
+    <div class="compare" data-set="consistency"></div>
+    <h3>Minute-Long Generation</h3>
+    <p class="desc">55-second generations on held-out nuPlan test scenes. After about 20 s of real driving, the ego vehicle makes a U-turn and drives back along the same street in the opposite lane, so the buildings and parked cars passed on the way out are seen again from the other side. Every method starts from the same initial frame; MAGI-1 receives the same text caption and Epona the same ego trajectory.</p>
+    <div class="compare" data-set="long-horizon"></div>
+  </section>
+
+  <section id="ablations">
+    <h2>Ablations</h2>
+    <h3>Instance-level KV Caching</h3>
+    <p class="desc">Held-out Argoverse 2 and nuPlan clips generated as the memory components are added one at a time. The target vehicle (green box) must keep its appearance across generation chunks (Scene 1) or after leaving the view and returning (Scene 2).</p>
+    <div class="compare" data-set="ablation-kv"></div>
+    <h3>Stationary Instances</h3>
+    <p class="desc">nuScenes validation scenes generated with and without stationary instances (buildings and vegetation) in the blocks-world condition. For this ablation, both models are trained from scratch for only 1,000 iterations, so the overall video quality is subpar; still, the two settings differ clearly in the speed and movement of the camera.</p>
+    <div class="compare" data-set="ablation-stationary"></div>
+  </section>
+
+  <!-- Hidden for now; restore when results are ready.
+  <section id="appearance">
+    <h2>Structure-Preserving Appearance Control</h2>
+    <p class="ph-text">Section description</p>
+    <div class="compare" data-set="appearance"></div>
+  </section>
+
+  <section id="freeview">
+    <h2>Free-View Generation</h2>
+    <p class="ph-text">Section description</p>
+    <div class="compare" data-set="freeview"></div>
+  </section>
+
+  <section id="pedestrian">
+    <h2>Pedestrian Pose Control</h2>
+    <p class="ph-text">Section description</p>
+    <div class="compare" data-set="pedestrian"></div>
+  </section>
+
+  <section id="ablation">
+    <h2>Ablations</h2>
+    <p class="ph-text">Section description</p>
+    <div class="compare" data-set="ablation"></div>
+  </section>
+  -->
+
+  <!-- Hidden for submission; restore for camera-ready.
+  <section id="bibtex">
+    <h2>BibTeX</h2>
+    <div class="bib">
+      <button class="copy" type="button">Copy</button>
+<pre><code>@inproceedings{anonymous2027memoir,
+  title     = {MemOIR: Driving Video Generation from View-Space Blocks World with Object-Level Memory},
+  author    = {Anonymous},
+  booktitle = {Under review at ICLR},
+  year      = {2027}
+}</code></pre>
+    </div>
+  </section>
+  -->
+
+</main>
+
+<footer class="wrap"></footer>
+
+<script src="static/js/main.js"></script>
+</body>
+</html>
