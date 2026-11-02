@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- two stacked isometric blocks: the blocks world -->
+  <g stroke="#7a2e14" stroke-width="1.2" stroke-linejoin="round">
+    <path d="M10 14 17 10.5 24 14 17 17.5Z" fill="#f0a77f"/>
+    <path d="M10 14 17 17.5 17 25 10 21.5Z" fill="#c2552d"/>
+    <path d="M17 17.5 24 14 24 21.5 17 25Z" fill="#9c3f1c"/>
+    <path d="M4 9.5 10 6.5 16 9.5 10 12.5Z" fill="#f6c9a8"/>
+    <path d="M4 9.5 10 12.5 10 18.5 4 15.5Z" fill="#d9774c"/>
+    <path d="M10 12.5 16 9.5 16 15.5 10 18.5Z" fill="#b2502a"/>
+  </g>
+</svg>
