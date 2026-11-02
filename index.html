@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MemOIR</title>
-  <meta name="description" content="MemOIR: driving video generation from a view-space blocks world with object-level memory. Real video to an editable code world, scenario editing, and long-horizon generation of realistic driving video.">
+  <meta name="description" content="MemOIR: driving video generation from a view-space blocks world with object-level memory. Real video to an editable code world, scenario editing, and long-horizon generation of photorealistic driving video.">
   <link rel="icon" type="image/svg+xml" href="static/images/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +32,7 @@
         <p class="hero-thesis">
           <strong>Real video</strong> <span class="arr">→</span>
           <strong>editable code world</strong> <span class="arr">→</span>
-          <strong>generated realistic video</strong>, with instance-level long-horizon consistency.
+          <strong>generated photorealistic video</strong>, with instance-level long-horizon consistency.
         </p>
 
         <div class="authors">
@@ -86,7 +86,7 @@
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">01</span> Overview</p>
-        <h2 class="sec-title">Driving scenes as code, generated back as <em>realistic video</em>.</h2>
+        <h2 class="sec-title">Driving scenes as code, generated back as <em>photorealistic video</em>.</h2>
       </div>
       <p class="abstract">
         Video generative models promise driving simulators that can render arbitrary traffic scenarios, but this requires both precise control over the scene and consistency across long rollouts. Existing driving generators condition only on traffic participants and road layout, leaving the static world, and with it the ego motion, underspecified, while frame-level memories grow quickly and cannot tell which cached tokens belong to which instance. We present MemOIR, a driving video diffusion model conditioned on a view-space blocks-world representation that renders every dynamic and static instance as a 3D block encoding its class, identity, and occlusion, curated automatically from raw driving videos. This representation densely specifies both agent motion and the ego trajectory, and enables object-level KV caching: each instance's tokens are cached from its most complete observations and re-embedded where its block projects when it reappears, attending to far fewer tokens than frame-level caching. MemOIR achieves the most accurate instance placement and ego-motion control among driving generators with competitive visual quality, faithfully places vehicles performing unseen maneuvers such as spin-outs, and substantially improves the identity consistency of returning vehicles.
@@ -226,7 +226,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">04</span> Sim → Real</p>
-        <h2 class="sec-title">Generating realistic video, with <em>object-level</em> memory.</h2>
+        <h2 class="sec-title">Generating photorealistic video, with <em>object-level</em> memory.</h2>
       </div>
       <p class="sec-lede">
         A ControlNet-style branch on a frozen <strong>Cosmos-Predict2.5-2B</strong> renders the blocks world chunk by chunk, each chunk re-anchored on the previous one's last frame. An <strong>instance-level KV bank</strong> keeps every vehicle consistent across chunks and after it leaves the view.
