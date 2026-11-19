@@ -1,0 +1,317 @@
+{
+ "id": "codeedit-cut-in",
+ "title": "Code-world edit: a cut-in with a safe gap",
+ "subtitle": "Lyft Level 5, suburban arterial, daytime · 126 keyframes at 5 Hz, rendered at 12 Hz · single agent session (Claude Opus 5.5)",
+ "task": "Edit the scenario in code: the car overtaking in the adjacent lane merges into the ego lane ahead of the ego with a safe gap.",
+ "inputs": [
+  {
+   "src": "media/input_kf000.jpg",
+   "label": "keyframe 0"
+  },
+  {
+   "src": "media/input_kf015.jpg",
+   "label": "keyframe 15"
+  },
+  {
+   "src": "media/input_kf030.jpg",
+   "label": "keyframe 30"
+  },
+  {
+   "src": "media/input_kf045.jpg",
+   "label": "keyframe 45"
+  }
+ ],
+ "steps": [
+  {
+   "type": "plan",
+   "label": "Plan",
+   "text": "The edit should make one vehicle in an adjacent same-direction lane, ahead of the ego, merge into the ego lane with a safe gap. Procedure: (1) screen the 16 candidate scenes for such a vehicle early in the model window (keyframes 0-76); (2) inspect the chosen vehicle, the ego lane and the lane geometry of `map_features.json`; (3) write the edit as appended lines of `scene_world.py`; (4) check it with `sanity.py` (gaps to every agent and to the ego, on-road fraction, divider crossings, visibility) and revise until clean; (5) render original and edited conditions and the BEV with `make_case.py` and inspect them.\nPlausibility targets: a lane change of about 4-5 s with a peak lateral speed below 1.5 m/s, no new overlap, no crossing of a road divider, and a following headway of at least about 1 s after the merge.",
+   "media": [
+    {
+     "src": "media/screen_strip_kf0-75.jpg",
+     "label": "chosen scene, camera at keyframes 0 / 15 / 30 (top), 45 / 60 / 75 (bottom)"
+    }
+   ],
+   "kv": [
+    [
+     "data",
+     "Lyft Level 5, 16 candidate scenes, code worlds from SceneClaw-edit"
+    ],
+    [
+     "clock",
+     "code world 5 Hz (126 keyframes); render 12 Hz (299 frames); model window 185 frames"
+    ],
+    [
+     "fixed",
+     "keyframe 0, the ego path and the static world are not editable"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Screen the scenes for an adjacent-lane leader",
+   "code": "# SAW: 16 scenes; the cut-in needs a same-direction\n#      vehicle ahead of the ego in the next lane, early\n#      in the model window\n\n# 1. every moving vehicle in the ego frame, kf 0-76\nsc = codeworld.load(f'{base}/scene_world.py')\nM = np.linalg.inv(E[t])\np = M[:3, :3] @ np.array(st[:3]) + M[:3, 3]\n\n# 2. ahead 6-35 m, 2.3-5 m to the side, heading within 15 deg\ngood = [r for r in rows if 6 < r[1] < 35\n        and 2.3 < abs(r[2]) < 5.0 and abs(r[3]) < 15]\n#    -> 8 of 16 scenes have at least one candidate"
+  },
+  {
+   "type": "feedback",
+   "label": "Candidates",
+   "text": "Most candidates either travel alongside the ego at the same speed or overtake late in the window (keyframe 39 or later). In scene a004-...838138 a sedan overtakes the ego on the left from keyframe 12 at about 3 m/s faster than the ego, on a sunny arterial with three lanes per direction; it is selected. A late overtaker in an overcast scene (a009-...297198) and a slow side-by-side follower (a004-...842367) are kept as alternatives.",
+   "kv": [
+    [
+     "a004-...838138  1fc847f8277b",
+     "kf 12-51 · ahead 6.5 -> 34.5 m · left 3.6-4.3 m · 15.6-16.2 m/s (ego 12.5)"
+    ],
+    [
+     "a009-...297198  bde291c602f5",
+     "kf 46-76 · ahead 6.1 -> 25.2 m · left 3.0 m · 15.4 m/s, overcast"
+    ],
+    [
+     "a009-...456298  a973e5bef845",
+     "kf 39-72 · ahead 6.2 -> 34.4 m · left 3.6 m · 17.2 m/s"
+    ],
+    [
+     "a004-...842367  e994e222eb4d",
+     "kf 0-64 · ahead 9.1 -> 25.6 m · left 3.6 m · same speed as the ego"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Inspect the sedan, the ego lane and the map",
+   "code": "# SAW: sedan 1fc847f8277b passes the ego on the left;\n#      the real frames show a clear lane ahead of the ego\n\n# 1. sedan and all agents within 45 m, every 3 keyframes\ncand = [a for a in sc.agents.values()\n        if a.id.startswith(pre)][0]\nst = a.state(t)    # -> ego-frame dx, dy, speed\n\n# 2. lane lines crossing x = 20 / 60 / 120 / 200 / 300 m\nd = json.load(open(base + '/map_features.json'))\nfor f in d['features']: ...   # road_line / road_edge"
+  },
+  {
+   "type": "feedback",
+   "label": "A free lane with a bus 50 m ahead",
+   "text": "The ego drives in the right travel lane; to its right are only parked vehicles (0 m/s, about 3 m to the side). The ego lane is free up to a 10.3 m bus that stays about 50 m ahead at the ego's speed. The sedan is centred about 3.8 m to the left, in the adjacent lane, and is 1 m ahead at keyframe 3 and 10.5 m ahead at keyframe 18.\nDesign: `lane_change(-3.8)` over keyframes 18-40 (4.4 s, peak lateral speed 1.4 m/s). At the midpoint the sedan is about 15 m ahead of the ego's front bumper and still pulling away, so the merge leaves a gap of more than 1 s.",
+   "media": [
+    {
+     "src": "media/input_kf015.jpg",
+     "label": "camera, keyframe 15: the sedan ahead in the left lane"
+    }
+   ],
+   "kv": [
+    [
+     "lane lines at x = 20 m",
+     "road edge -4.6 · lane divider +1.0 · lane divider +5.2 · median edge +9.0 (y, m)"
+    ],
+    [
+     "ego lane ahead",
+     "bus f8c5519523, 10.3 m, about 51 m ahead, 12.2-13.1 m/s"
+    ],
+    [
+     "sedan 1fc847f8277b",
+     "4.2 x 1.9 m, 15.6-16.2 m/s; ego 12.0-12.8 m/s"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v1: lane change into the ego lane",
+   "code": "# SAW: the ego lane is free between the ego and the bus;\n#      the sedan is 10.5 m ahead at kf 18\n\n# 1. append the edit to a copy of scene_world.py\ncar = scene.agent('1fc847f8277b...')\ncar.lane_change(-3.8, t0=18, t1=40)\n\n# 2. check the edited world before rendering\nsanity.py --scene a004-...838138\n          --edited scene_world_v1.py\n#    -> WARNING: overlaps another agent in 72 frames"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: the sedan reaches the bus",
+   "text": "The merge itself is clean (no off-road frames, one lane-divider crossing, no road-divider crossing, gap to the ego unchanged). The sedan, however, keeps its original 16 m/s in the ego lane and closes on the bus, which travels at about 12.5 m/s. From 12 Hz frame 158 it overlaps the bus. The edit therefore also requires the sedan to adapt its speed after merging.",
+   "media": [
+    {
+     "src": "media/sanity_gap_v1.png",
+     "label": "sanity.py, v1: gap of the sedan to the nearest other agent per 12 Hz frame"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames",
+     "72 (worst: f8c5519523 at frame 176, overlap 1.00)"
+    ],
+    [
+     "min_gap_ego_m",
+     "1.84 (unchanged; at frame 0)"
+    ],
+    [
+     "min_onroad / offroad_frames",
+     "1.0 / 0"
+    ],
+    [
+     "lane_divider_crossings",
+     "[77] · road_divider_crossings []"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v2: ease off behind the bus",
+   "code": "# SAW: at 16 m/s in the ego lane the sedan overlaps the\n#      bus from frame 158\n\n# 1. same lane change, then 16.0 -> 12.8 m/s at 0.8 m/s^2\ncar.lane_change(-3.8, t0=18, t1=40)\nfor t in range(28, 48):\n    car.set_speed(16.0 - 0.16 * (t - 27),\n                  from_t=t, to_t=t + 1)\ncar.set_speed(12.8, from_t=48)\n\n# 2. check, then render the case\nsanity.py --scene ... --edited scene_world_v2.py\n#    -> no overlap; gap to the bus settles at 18 m\nmake_case.py --scene ... --case cutin --wait\n#    -> CHECK OK, 139 changed frames in the window"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: safe, but the sedan settles far ahead",
+   "text": "The overlap is removed; the sedan follows the bus at 18 m (1.4 s) and stays 22-23 m ahead of the ego. In the rendered canvases the merged sedan is small at this distance: the edit changes at most 17,866 pixels per frame (mean 8,842 over the 139 changed frames in the model window). To make the cut-in clearly visible while keeping it polite, the deceleration should begin during the lane change, so that the sedan settles closer to the ego.",
+   "media": [
+    {
+     "src": "media/sanity_gap_v1_v2.png",
+     "label": "sanity.py: v1 against v2, gap to the nearest other agent"
+    },
+    {
+     "src": "media/v2_compare_f140.jpg",
+     "label": "v2, frame 140: original | edited canvas | original BEV | edited BEV"
+    }
+   ],
+   "kv": [
+    [
+     "v2 sanity",
+     "overlap 0 frames · min gap to the ego 1.84 m · on-road 1.0"
+    ],
+    [
+     "v2 gap to the ego after the merge",
+     "22-23 m"
+    ],
+    [
+     "v2 edit_visible",
+     "253 frames, 139 in the model window, max 17,866 px"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v3: decelerate during the merge",
+   "code": "# SAW: v2 is collision-free, but the sedan settles 22 m\n#      ahead and is small in the canvas\n\n# 1. lane change kf 16-38; ease 16.0 -> 12.6 m/s over\n#    kf 22-40 (0.9 m/s^2), then keep pace with the ego\ncar.lane_change(-3.8, t0=16, t1=38)\nfor t in range(22, 40):\n    car.set_speed(16.0 - 0.19 * (t - 21),\n                  from_t=t, to_t=t + 1)\ncar.set_speed(12.6, from_t=40)\n\n# 2. check the edited world\nsanity.py --scene ... --edited scene_world_v3.py\n#    -> no overlap; gap to the ego settles at 16-17 m"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: gaps, road and dividers",
+   "text": "The sedan crosses the lane divider at frame 74, about 14 m ahead of the ego's front bumper and still pulling away, and settles 16-17 m ahead (1.3 s at 12.6 m/s), 23-25 m behind the bus. The only gaps below 1 m (frames 96-112) are lateral clearances to a parked RV on the right; the ego passes the same RV at 0.58 m. Later in the clip, outside the model window, the gap to the ego closes to 12.8 m because the ego accelerates slightly.",
+   "media": [
+    {
+     "src": "media/sanity_gap_v3.png",
+     "label": "sanity.py, v3: gap to the ego and to the nearest other agent"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames / overlap_ego_frames",
+     "0 / 0"
+    ],
+    [
+     "min_gap_other_m",
+     "0.61 (parked RV, lateral; the ego passes it at 0.58 m)"
+    ],
+    [
+     "min_onroad / offroad_frames",
+     "1.0 / 0"
+    ],
+    [
+     "lane_divider_crossings",
+     "[74] · road_divider_crossings []"
+    ],
+    [
+     "visible_in_model_window",
+     "173 of 185 frames"
+    ],
+    [
+     "max heading change",
+     "4.8 deg; peak lateral speed 1.4 m/s"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Render original and edited conditions",
+   "code": "# SAW: sanity is clean for v3\n\n# 1. delta-patch the boxes, render both canvases, crops,\n#    BEV and compare video on a CPU job, then run checks\nmake_case.py --scene a004-...838138 --case cutin\n             --edited scene_world.py --wait\n#    -> changed 1fc847f8277b: keyframes 18..125\n#       (12 Hz frames 41..298)\n#    -> CHECK OK"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: frame 0 identical, the edit is visible",
+   "text": "Frame 0 is bit-identical in the raw render and in the decoded videos; the ego poses and the static world are unchanged. In the edited canvas the sedan leaves the left lane at frame 41, is in the middle of the lane change at frame 66, and from about frame 90 onwards is centred in the ego lane ahead of the bus; in the original it remains in the left lane and recedes to more than 40 m.",
+   "media": [
+    {
+     "src": "media/v3_canvas_f066.jpg",
+     "label": "frame 66: original | edited canvas (mid lane change)"
+    },
+    {
+     "src": "media/v3_canvas_f090.jpg",
+     "label": "frame 90: original | edited canvas (merged)"
+    },
+    {
+     "src": "media/v3_bev_f090.jpg",
+     "label": "frame 90: original | edited BEV (magenta: edited path)"
+    }
+   ],
+   "kv": [
+    [
+     "fails / warnings",
+     "none / none"
+    ],
+    [
+     "frame0_raw_render_max_abs_diff",
+     "0"
+    ],
+    [
+     "edit_visible",
+     "258 frames (41-298), 144 in the model window"
+    ],
+    [
+     "changed pixels",
+     "max 21,297 per frame; mean 11,722 in the model window (v2: 8,842)"
+    ]
+   ]
+  },
+  {
+   "type": "result",
+   "label": "Edited code world",
+   "text": "The sedan that overtakes the ego in the left lane performs a polite cut-in: it merges into the ego lane over 4.4 s, crossing the lane divider about 14 m ahead of the ego, decelerates at 0.9 m/s^2 to the speed of the traffic and then follows 16-17 m ahead of the ego. The edit is six lines appended to `scene_world.py`. Video: original canvas | edited canvas | original BEV | edited BEV, model window (frames 0-184).",
+   "media": [
+    {
+     "src": "media/result_compare_f000-184.mp4",
+     "poster": "media/result_poster_f090.jpg",
+     "label": "original | edited canvas | original BEV | edited BEV, 185 frames at 12 Hz"
+    }
+   ],
+   "kv": [
+    [
+     "edited vehicle",
+     "1fc847f8277b (sedan, 4.2 x 1.9 m)"
+    ],
+    [
+     "iterations",
+     "3 (v1 overlap with the bus; v2 settles too far ahead; v3 accepted)"
+    ],
+    [
+     "sanity",
+     "no overlap; on-road 1.0; no road-divider crossing; visible in 173 of 185 frames"
+    ],
+    [
+     "render check",
+     "OK; frame 0 bit-identical; 144 changed frames in the model window"
+    ]
+   ],
+   "code": "# ==== code-world edit (cutin): the overtaking sedan in the\n#      left lane merges into the ego lane ahead of the ego,\n#      easing off to the speed of the traffic (0.9 m/s^2)\ncar = scene.agent('1fc847f8277b...')\ncar.lane_change(-3.8, t0=16, t1=38)  # kf 16 -> 38 (4.4 s)\nfor t in range(22, 40):              # 16.0 -> 12.6 m/s\n    car.set_speed(16.0 - 0.19 * (t - 21),\n                  from_t=t, to_t=t + 1)\ncar.set_speed(12.6, from_t=40)       # keep pace"
+  },
+  {
+   "type": "result",
+   "label": "Generated video",
+   "text": "MemOIR generates both scenarios from the same real first frame and the two blocks-world conditions. Only the edited vehicle is changed; the static world, the ego path and all other agents are the same.",
+   "media": [
+    {
+     "src": "../../videos/codeworld/cut-in/ours-original.mp4?v=202611192239",
+     "label": "MemOIR, original code world"
+    },
+    {
+     "src": "../../videos/codeworld/cut-in/ours-edited.mp4?v=202611192239",
+     "label": "MemOIR, edited code world"
+    }
+   ],
+   "kv": [
+    [
+     "frames",
+     "185 at 12 Hz (15.4 s)"
+    ],
+    [
+     "initial frame",
+     "real, shared by both"
+    ]
+   ]
+  }
+ ]
+}

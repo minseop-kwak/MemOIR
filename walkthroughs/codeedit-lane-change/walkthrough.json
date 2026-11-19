@@ -1,0 +1,342 @@
+{
+ "id": "codeedit-lane-change",
+ "title": "Code-world edit: a left lane change ahead of the ego",
+ "subtitle": "Lyft Level 5, Palo Alto, daytime · 25 s, 126 keyframes at 5 Hz, canvas at 12 Hz · single agent session (Claude Opus 5.5)",
+ "task": "Edit the scenario in code: the car ahead of the ego changes one lane to the left and continues straight.",
+ "inputs": [
+  {
+   "src": "media/input_kf000.jpg",
+   "label": "keyframe 0 (0 s)"
+  },
+  {
+   "src": "media/input_kf020.jpg",
+   "label": "keyframe 20 (4 s)"
+  },
+  {
+   "src": "media/input_kf040.jpg",
+   "label": "keyframe 40 (8 s)"
+  },
+  {
+   "src": "media/input_kf060.jpg",
+   "label": "keyframe 60 (12 s)"
+  }
+ ],
+ "steps": [
+  {
+   "type": "plan",
+   "label": "Plan",
+   "text": "Edit one vehicle of a recorded Lyft Level 5 scene in its code world: a car ahead of the ego, travelling in the same direction, changes one lane to the left on a multi-lane road.\nRequirements: a smooth lateral move over about 4 s; drivable road and same-direction lanes only; no new conflict with any agent or with the ego; keyframe 0 unchanged; the car in view and well within 40 m during the manoeuvre, inside the 185 frames the video model sees.\nProcedure: screen the candidate scenes, analyse the chosen car and its neighbours, edit a copy of `scene_world.py`, verify it with `sanity.py` before rendering and with the checks of `make_case.py` after rendering.",
+   "kv": [
+    [
+     "candidate scenes",
+     "16 Lyft scenes, 126 keyframes each (5 Hz, 25 s)"
+    ],
+    [
+     "model window",
+     "12 Hz canvas frames 0-184 (keyframes 0-76)"
+    ],
+    [
+     "edit API",
+     "lane_change, reroute, set_speed, span, state"
+    ],
+    [
+     "fixed",
+     "static world, ego path, camera, keyframe 0"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Screen the candidate scenes",
+   "code": "# SAW: a left lane change needs a car ahead of the ego\n#      with a same-direction lane free on its left\n\n# 1. list the vehicles of each scene: frames, speed,\n#    visibility in the model window, start position\n$ sanity.py --scene <scene> --list        # 16 scenes\n\n# 2. shift every car 8-35 m ahead by +3.4 m; test the\n#    drivable area, road dividers, +-14 m clearance\n$ scan_lc.py <16 scenes>\n#    -> 2 cars keep the left lane clear for > 25 kf"
+  },
+  {
+   "type": "feedback",
+   "label": "Two candidates",
+   "text": "**A**: car 1e81 drives 20-28 m ahead in the ego lane of a daytime boulevard with a signalised intersection; the lane to its left carries traffic in the same direction.\n**B**: car f292 is already in the left lane, 21-43 m ahead, and later moves to the right on its own.\nA is selected: the car is closer, centred in the view, and a lane change frees the ego lane.",
+   "media": [
+    {
+     "src": "media/shortlist.jpg",
+     "label": "real front camera, keyframes 0 / 25 / 50 (top: A, bottom: B)"
+    }
+   ],
+   "kv": [
+    [
+     "scan_lc 1e811fdf (A)",
+     "clear for 55 kf from kf 4; blocked by 3d8d at kf 60"
+    ],
+    [
+     "scan_lc f29248dd (B)",
+     "clear for 75 kf from kf 10; 31 m ahead"
+    ],
+    [
+     "other 14 scenes",
+     "at most 12 kf of clear left lane"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Recorded motion of the car and its neighbours",
+   "code": "# SAW: scene A, car 1e81 21 m ahead in the ego lane\n\n# 1. follow 1e81 and every vehicle within +-35 m of it\n$ neighbors.py <scene A> 1e811fdf 90 4\n#    -> kf 0-48: 4.3-8.8 m/s, 20-28 m ahead of the ego\n#    -> kf 52-91: slows to 2-5 m/s and turns right\n#    -> left lane: truck 3d8d beside the ego, 25 m back\n\n# 2. draw the recorded paths on the drivable map\n$ scene_bev.py <scene A> ... --kmax 90 --hl 1e81"
+  },
+  {
+   "type": "feedback",
+   "label": "The car turns right at x = 110 m",
+   "text": "1e81 brakes from keyframe 48 and turns right into a side road at x = 110 m. After a left lane change this turn would have to cross the ego lane, so the edited car has to continue straight.\nThe left lane is free ahead of 1e81; the 7.3 m truck 3d8d drives beside the ego, about 25 m behind 1e81.",
+   "media": [
+    {
+     "src": "media/plan_bev.webp",
+     "label": "recorded paths, world frame of keyframe 0 (hatched: crosswalks, dashed: lane lines)"
+    }
+   ],
+   "kv": [
+    [
+     "1e81 speed",
+     "4.3 m/s at kf 0, 8.8 m/s at kf 26-44, then braking"
+    ],
+    [
+     "ego speed",
+     "5.6-8.7 m/s up to kf 56"
+    ],
+    [
+     "3d8d lateral offset",
+     "+3.3 to +3.6 m left of 1e81"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "First edit: lane change, then straight on (v1)",
+   "code": "# SAW: the right turn cannot follow a left lane change;\n#      the car continues straight in the new lane\ncar = scene.agent('1e811fdf...')\n\n# 1. path: recorded route to x = 80 m, then straight on\ncar.reroute([(21.424, -0.001, 1.142), ...,\n             (229.4, -1.95, 0.9)])\n\n# 2. cruise instead of braking; extend to keyframe 125\ncar.set_speed(8.8, from_t=44)\ncar.span(0, 125)\n\n# 3. one lane (3.4 m) to the left over 4 s\ncar.lane_change(3.4, t0=14, t1=34)\n$ sanity.py --scene <scene A> --edited scene_world_v1.py\n#    -> WARNING overlaps another agent in 64 frames"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: the truck runs into the car",
+   "text": "The lane change itself is clear. Afterwards the truck 3d8d accelerates to 12.9 m/s behind the 8.8 m/s car and overlaps it from 12 Hz frame 184 (keyframe 76) on; the ego later passes it at 1.25 m. The speed after the lane change has to match the faster left lane.",
+   "media": [
+    {
+     "src": "media/st_v1.webp",
+     "label": "position along the road over time, v1"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames",
+     "64 (original 0); worst 3d8d7da277 @ frame 196"
+    ],
+    [
+     "min_gap_ego_m",
+     "1.25 (original 7.72)"
+    ],
+    [
+     "min_onroad",
+     "1.0"
+    ],
+    [
+     "visible_in_model_window",
+     "185 / 185"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Speed of the left lane (v2)",
+   "code": "# SAW: neighbors.py on 3d8d and 08a4: 3d8d reaches\n#      12.9 m/s by kf 56; 08a4 enters the left lane at\n#      x = 148 m at kf 70 and drives at 16.6-17 m/s\n\n# 1. same path; headings follow it (old ones turn right)\ncar.reroute([...])\ncar.headings = None\ncar.span(0, 125)\n\n# 2. recorded motion to kf 30, then 1.45 m/s^2 to 16.5\ns, v = car._s(30), car.speed(30)\ncar.timing = {t: x for t, x in car.timing.items()\n              if t <= 30}\nfor t in range(31, 126):\n    v = min(v + 1.45 / 5, 16.5)\n    s += v / 5\n    car.timing[t] = s\ncar.lane_change(3.4, t0=14, t1=34)\n#    -> sanity: no warnings"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: clear of all agents",
+   "text": "The car now stays ahead of 3d8d and about 34 m ahead of 08a4 once 08a4 appears. The nearest agents are in adjacent lanes. No lane_divider crossing is reported.",
+   "media": [
+    {
+     "src": "media/st_v2.webp",
+     "label": "position along the road over time, v2"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames",
+     "0 (original 0)"
+    ],
+    [
+     "min_gap_other_m",
+     "1.77 (adjacent lane)"
+    ],
+    [
+     "min_gap_ego_m",
+     "16.21 (original 7.72)"
+    ],
+    [
+     "lane_divider_crossings",
+     "[]"
+    ],
+    [
+     "visible_in_model_window",
+     "185 / 185"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Render v2 and inspect the BEV",
+   "code": "# SAW: sanity is clean; render both worlds\n\n# 1. delta-patch the boxes, render the 12 Hz canvases,\n#    model-input crops and BEVs, then run the checks\n$ make_case.py --scene <scene A> --case lc_left \\\n      --edited scene_world.py --wait\n#    -> CHECK OK; edit visible from frame 34"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: the lane change lies in the intersection",
+   "text": "Frame 0 is bit-identical and the edit is visible from frame 34. The BEV shows, however, that the lateral move (frames 34-84) takes place inside the signalised intersection, between the two crosswalks, where the map has no lane lines; this is also why no lane_divider crossing was reported. A lane change inside the intersection is not the most plausible manoeuvre.",
+   "media": [
+    {
+     "src": "media/v2_bev_intersection.jpg",
+     "label": "v2, edited BEV at frames 34 / 60 / 84 (magenta: edited car)"
+    }
+   ],
+   "kv": [
+    [
+     "check.json",
+     "ok, fails []"
+    ],
+    [
+     "edit_visible",
+     "159 frames, 151 in the model window, first 34"
+    ],
+    [
+     "map",
+     "lane lines end at x = 44 m, resume at x = 77 m; crosswalks x = 40-79 m"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Lane change before the intersection (v3)",
+   "code": "# SAW: the dashed lane line ends at x = 44 m; in kf\n#      1-21 the car covers x = 22-47 m at 4.3-8 m/s\n\n# 1. start right after keyframe 0, same 4 s duration\ncar.lane_change(3.4, t0=1, t1=21)\n$ sanity.py --scene <scene A> --edited scene_world_v3.py\n#    -> no warnings; lane_divider crossed at frame 26\n\n# 2. render again under the same case name\n$ make_case.py ... --case lc_left --wait\n#    -> CHECK OK; visible in 182 of 185 model frames"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: sanity of the final edit",
+   "text": "The car crosses the dashed line at x = 33 m and reaches the centre of the left lane at the first crosswalk. Peak lateral speed is 1.3 m/s; the heading departs at most 12 degrees from the lane, at 6 m/s. The nearest agents are in adjacent lanes, and the ego stays at least 16 m behind.",
+   "media": [
+    {
+     "src": "media/v3_bev.webp",
+     "label": "final edit, world frame of keyframe 0"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames / overlap_ego_frames",
+     "0 / 0"
+    ],
+    [
+     "min_gap_other_m",
+     "1.77 (adjacent lane)"
+    ],
+    [
+     "min_gap_ego_m",
+     "16.13 (original 7.72)"
+    ],
+    [
+     "min_onroad",
+     "1.0"
+    ],
+    [
+     "lane_divider / road_divider crossings",
+     "[26] / []"
+    ],
+    [
+     "visible_in_model_window",
+     "185 / 185"
+    ]
+   ]
+  },
+  {
+   "type": "feedback",
+   "label": "Rendered canvas and BEV",
+   "text": "Frame 72: in the original the car occupies the ego lane 26 m ahead; in the edited world it drives in the left lane and the ego lane is free. In the BEV the edited track leaves the ego lane before the intersection.",
+   "media": [
+    {
+     "src": "media/canvas_f072_original_vs_edited.jpg",
+     "label": "canvas, frame 72: original | edited (top: model crop, bottom: detail)"
+    },
+    {
+     "src": "media/v3_bev_strip.jpg",
+     "label": "edited BEV at frames 12 / 36 / 60"
+    }
+   ],
+   "kv": [
+    [
+     "check.json",
+     "ok, fails [], raw frame 0 identical"
+    ],
+    [
+     "edit_visible",
+     "227 frames, 182 in the model window, first 3"
+    ],
+    [
+     "max changed pixels",
+     "38,507 at frame 175"
+    ]
+   ]
+  },
+  {
+   "type": "result",
+   "label": "Original and edited conditions",
+   "text": "The car ahead leaves the ego lane to the left over 4 s before the intersection, then accelerates with the left-lane traffic and continues straight instead of braking and turning right. Keyframe 0, the static world and the ego path are unchanged. Lines appended to the scene's `scene_world.py`:",
+   "media": [
+    {
+     "src": "media/result_compare.mp4",
+     "poster": "media/result_poster.jpg",
+     "label": "frames 0-184 at 12 Hz: original canvas | edited canvas | original BEV | edited BEV"
+    }
+   ],
+   "kv": [
+    [
+     "edited agent",
+     "1e811fdf (car), keyframes 2-125"
+    ],
+    [
+     "lane change",
+     "3.4 m left, keyframes 1-21 (0.2-4.2 s)"
+    ],
+    [
+     "min gap to agents / ego",
+     "1.77 m / 16.13 m"
+    ],
+    [
+     "on-road fraction",
+     "1.0"
+    ],
+    [
+     "visible in the model window",
+     "185 / 185 frames (sanity), 182 changed (render)"
+    ]
+   ],
+   "code": "car = scene.agent('1e811fdf25a7710d83d60569d0a7a3f804b5efc96df328b00cabd428561d90ef')\ncar.reroute([(21.424, -0.001, 1.142), (36.244, -0.256, 1.274),\n             (47.509, -0.389, 1.081), (62.792, -0.607, 1.031),\n             (80.462, -0.653, 0.976), (99.2, -0.85, 0.9),\n             (123.9, -1.08, 0.9), (162.9, -1.39, 0.9),\n             (203.5, -1.9, 0.9), (270.0, -2.0, 0.9),\n             (380.0, -2.3, 0.9)])   # ego lane, straight on\ncar.headings = None\ncar.span(0, 125)\ncar.frame_attrs = [((0, 125), {'lyft_category': 'car'})]\ns, v = car._s(30), car.speed(30)\ncar.timing = {t: x for t, x in car.timing.items()\n              if t <= 30}\nfor t in range(31, 126):\n    v = min(v + 1.45 / 5, 16.5)\n    s += v / 5\n    car.timing[t] = s\ncar.lane_change(3.4, t0=1, t1=21)"
+  },
+  {
+   "type": "result",
+   "label": "Generated video",
+   "text": "MemOIR generates both scenarios from the same real first frame and the two blocks-world conditions. Only the edited vehicle is changed; the static world, the ego path and all other agents are the same.",
+   "media": [
+    {
+     "src": "../../videos/codeworld/lane-change/ours-original.mp4?v=202611192239",
+     "label": "MemOIR, original code world"
+    },
+    {
+     "src": "../../videos/codeworld/lane-change/ours-edited.mp4?v=202611192239",
+     "label": "MemOIR, edited code world"
+    }
+   ],
+   "kv": [
+    [
+     "frames",
+     "185 at 12 Hz (15.4 s)"
+    ],
+    [
+     "initial frame",
+     "real, shared by both"
+    ]
+   ]
+  }
+ ]
+}

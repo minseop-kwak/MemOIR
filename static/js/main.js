@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611192221';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611192239';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -31,11 +31,23 @@ const SETS = {
     rows: [[['combo', 'Input Video | Blocks World | BEV | Far BEV']]],
   },
 
-  /* Part 2: an edit of the exported scene_world.py, rendered and generated. */
+  /* Part 3: one vehicle of a recorded scene edited in code; original | edited.
+     BEV slots are crops of the bird's-eye view, so slots take their video's own aspect. */
   'codeworld-edit': {
     dir: 'videos/codeworld',
-    tabs: [{ id: 'edit-01', label: 'Edit 1' }],
-    rows: [[['before', 'Original Blocks World'], ['after', 'Edited Blocks World'], ['ours', 'MemOIR (Ours)']]],
+    native: true,
+    tabs: [
+      { id: 'lane-change', label: 'Lane Change' },
+      { id: 'cut-in', label: 'Cut-In' },
+      { id: 'merge', label: 'Overtake and Merge' },
+      { id: 'right-turn', label: 'Right Turn' },
+      { id: 'left-turn', label: 'Left Turn' },
+    ],
+    rows: [
+      [['condition-original', 'Original Blocks World'], ['condition-edited', 'Edited Blocks World']],
+      [['ours-original', 'MemOIR, Original'], ['ours-edited', 'MemOIR, Edited']],
+      [['bev-original', 'Original, Bird\'s-Eye View'], ['bev-edited', 'Edited, Bird\'s-Eye View']],
+    ],
   },
 
 

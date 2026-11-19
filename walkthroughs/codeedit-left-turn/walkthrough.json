@@ -1,0 +1,269 @@
+{
+ "id": "codeedit-left-turn",
+ "title": "Code-world edit: a crossing car turns left instead of going straight",
+ "subtitle": "Lyft Level 5, Palo Alto, daytime · 25 s at 5 Hz, canvas at 12 Hz · single agent session (Claude Opus 5.5)",
+ "task": "Edit the scenario in code: a crossing car turns left into the ego's road instead of driving straight through the junction.",
+ "inputs": [
+  {
+   "src": "media/input_kf000.jpg",
+   "label": "keyframe 0"
+  },
+  {
+   "src": "media/input_kf028.jpg",
+   "label": "keyframe 28"
+  },
+  {
+   "src": "media/input_kf034.jpg",
+   "label": "keyframe 34"
+  },
+  {
+   "src": "media/input_kf055.jpg",
+   "label": "keyframe 55"
+  }
+ ],
+ "steps": [
+  {
+   "type": "plan",
+   "label": "Plan",
+   "text": "The edit must change which road one oncoming or crossing vehicle takes at a junction, remain physically plausible, and be clearly visible from the ego camera within the first 185 rendered frames (keyframes 0 to ~76). Procedure: (1) screen the 16 candidate scenes by their real frames and a bird's-eye view (BEV) of all tracks over the map lines; (2) select a vehicle and a manoeuvre that the road layout supports; (3) write the edit in the code world and verify it with `sanity.py` (gaps to all agents and the ego, drivable-area fraction, divider crossings, visibility); (4) render the original and edited conditioning canvases and BEVs with `make_case.py` and inspect them.",
+   "media": [
+    {
+     "src": "media/shortlist.jpg",
+     "label": "Junction scenes among the candidates (real frames, keyframes 0 and 90)"
+    }
+   ],
+   "kv": [
+    [
+     "candidates",
+     "16 Lyft L5 scenes, 25 s each, 5 Hz code-world keyframes, 12 Hz canvas"
+    ],
+    [
+     "constraints",
+     "keyframe 0 unchanged; static world, ego path and camera not editable"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Screening: tracks over the map",
+   "code": "# SAW: four scenes start at a signalised junction; in a009\n#      the view is blocked by queued cars, in a102 the ego\n#      crosses the junction by keyframe 30\n\n# 1. list the vehicles of every candidate world\n#    sanity.py --scene S --list        (16 scenes)\n\n# 2. plot the ego path and all moving tracks on the map\nsc = cw.load(f\"{T}/{scene}/pred/edit_gt10/scene_world.py\")\nfor a in sc.agents.values():\n    if a.type != \"TYPE_VEHICLE\" or not a.moving:\n        continue\n    P = np.array([a.state(t)[:2] for t in range(t0, t1 + 1)])\n    ax.plot(P[:, 0], P[:, 1], ...)\n#    -> a015: ego stationary at the stop line until kf 55;\n#       southbound cross traffic passes 15-20 m ahead"
+  },
+  {
+   "type": "feedback",
+   "label": "Scene a015: cross traffic in front of a waiting ego",
+   "text": "In scene a015 the ego waits at a red light (keyframes 0-55) while southbound traffic crosses 15-20 m ahead at 10-13 m/s; no northbound traffic opposes a left turn from the north approach. The southbound car `e74eb6` (left through lane) is visible in only 32 frames of the model window, as it crosses the view in about 1.5 s. Its alternative route, a left turn into the ego's own road, would keep it in view ahead of the ego.",
+   "media": [
+    {
+     "src": "media/overview_a015.jpg",
+     "label": "overview.py, a015: ego path (green), vehicle tracks (red, bold up to kf 76), map lines"
+    }
+   ],
+   "kv": [
+    [
+     "ego",
+     "x = 0.0 m for kf 0-50; 2.6 m at kf 60; 22.0 m at kf 75"
+    ],
+    [
+     "sanity --list e74eb6",
+     "kf 0..70, 12.0 m/s, visible in model window: 32 frames"
+    ],
+    [
+     "southbound lanes",
+     "10 cars at x = 15-20 m, 10-13 m/s; 4aac45 decelerates to a stop from kf 31"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Road geometry of the north approach",
+   "code": "# SAW: e74eb6 drives at x ~ 19.4-20.6, the left through\n#      lane; the map has no lane centrelines, only dividers\n\n# 1. print the map lines near the junction\nf = json.load(open(f\"{B}/map_features.json\"))[\"features\"]\nfor z in f:\n    P = np.asarray(z.get(\"polyline\", z.get(\"polygon\")))\n    m = (P[:, 0] > 0) & (P[:, 0] < 45) & (P[:, 1] > 15) ...\n    print(z[\"type\"], z.get(\"lyft_label\"), P[m][:, :2])\n#    -> divider x = 21.0 for y = 16.7..44.2 and median edge\n#       x = 24.4: a left-turn pocket opens at y ~ 44\n#    -> eastbound exit: road divider y = +2.7, lane divider\n#       y = -0.8, road edge y = -4.7"
+  },
+  {
+   "type": "feedback",
+   "label": "A left-turn pocket exists",
+   "text": "The north approach widens from three to four southbound lanes at y ~ 44 m: the added lane between the divider at x = 21.0 m and the median at x = 24.4 m is a left-turn pocket (centre x = 22.7 m). The inner eastbound lane of the ego's road lies between y = -0.8 m and y = +2.7 m. Planned manoeuvre: enter the pocket, decelerate, turn left with a 13 m radius into the inner eastbound lane, then accelerate.",
+   "kv": [
+    [
+     "pocket",
+     "x 21.0-24.4 m, from y = 44.2 m to the stop line (y ~ 17 m)"
+    ],
+    [
+     "eastbound lane",
+     "y -0.8 to +2.7 m (centre ~ +1.0 m)"
+    ],
+    [
+     "turn",
+     "quarter circle, R = 13 m, at 6 m/s (lateral acceleration 2.8 m/s^2)"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v1: pocket, left turn, straight exit",
+   "code": "# SAW: pocket centre x = 22.7; eastbound lane centre ~ +1.0\n\n# 1. keep the recorded route up to kf 11 (y ~ 48)\ncar = scene.agent('e74eb685...')\nT0 = 11\nx0, y0, z0, _ = car.state(T0)\ns0, v0 = car._s(T0), car.speed(T0)\nPOCKET_X, LANE_Y, R = 22.7, 1.0, 13.0\n\n# 2. cosine S-shift into the pocket, quarter circle, then\n#    straight east along y = LANE_Y\npath = [p for p in car.route if p[1] > y0 + 0.5] + ...\npath.append((POCKET_X + R + 200.0, LANE_Y, z0))\ncar.reroute(path)\n\n# 3. speed: cosine blend v0 -> 6 m/s before the arc,\n#    6 m/s on the arc, 6 -> 12 m/s over 35 m after it\ncar.timing = timing   # integrated v_of(s) at 5 Hz\ncar.frame_attrs = [((0, 125), {'lyft_category': 'car'})]"
+  },
+  {
+   "type": "feedback",
+   "label": "sanity.py: overlap downstream",
+   "text": "The straight exit at y = +1.0 m ignores a slight rightward drift of the road beyond x ~ 100 m: at 12 Hz frame 246 the car overlaps the westbound car `1e1299` (outside the model window). Near the junction, the clearance to the stationary westbound car `5ef3ef` is about 1.0 m, which is at the collision threshold.",
+   "kv": [
+    [
+     "overlap_other_frames",
+     "4 (worst 1e1299d9c6 at frame 246, 0.12 of the smaller footprint)"
+    ],
+    [
+     "min_gap_other_m",
+     "0.0 (original 1.91)"
+    ],
+    [
+     "gap to 5ef3ef",
+     "1.11 m at frame 132, 1.02 m at frame 144"
+    ],
+    [
+     "min_gap_ego_m / min_onroad",
+     "22.37 / 1.0"
+    ],
+    [
+     "visible_in_model_window",
+     "117 frames (original 32)"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v2: follow the ego's lane after the turn",
+   "code": "# SAW: overlap with 1e1299 at frame 246; 1.0 m clearance\n#      to the waiting car 5ef3ef at frame 144\n\n# 1. take the exit lane from the ego's own later path,\n#    0.4 m to its right, instead of a straight line\nlane = [(e[0], e[1] - 0.4)\n        for e in (scene.ego[t] for t in range(60, 126))\n        if e[0] > 36.0]\nLANE_Y = lane[0][1]\ny_arc = LANE_Y + R\n\n# 2. same S-shift and arc; then the lane points and a\n#    100 m extension along the final lane direction\npath += [(x, y, z0) for x, y in lane[1:]]\n(xa, ya), (xb, yb) = lane[-6], lane[-1]\npath.append((xb + 100.0,\n             yb + 100.0 * (yb - ya) / (xb - xa), z0))\ncar.reroute(path)\n#    -> sanity.py --edited v2/scene_world.py"
+  },
+  {
+   "type": "feedback",
+   "label": "sanity.py: no overlap, on road",
+   "text": "No overlap with any agent or the ego; the car stays on the drivable area in every frame and crosses only the lane divider into the pocket (12 Hz frame 37). The closest approaches are 1.38 m to the through-lane car `1a7811` while the turn begins (frame 86) and 1.30 m to the oncoming `1e1299` at frame 244, outside the model window. Speed varies smoothly between 10.4 and 6 m/s (acceleration between -1.7 and +2.5 m/s^2); the heading rate peaks at v/R = 0.46 rad/s on the arc.",
+   "media": [
+    {
+     "src": "media/path_v2.jpg",
+     "label": "pathplot.py: original (grey) and edited (magenta) path of e74eb6, boxes every 10 keyframes"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames / overlap_ego_frames",
+     "0 / 0"
+    ],
+    [
+     "min_gap_other_m",
+     "1.30 (1e1299, frame 244); 1.38 (1a7811, frame 86)"
+    ],
+    [
+     "min_gap_ego_m",
+     "22.24"
+    ],
+    [
+     "min_onroad / offroad_frames",
+     "1.0 / 0"
+    ],
+    [
+     "divider crossings",
+     "lane_divider [37], road_divider none"
+    ],
+    [
+     "visible_in_model_window",
+     "117 frames (original 32)"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Render the original and edited conditions",
+   "code": "# SAW: v2 passes all sanity checks\n\n# 1. prepare the delta patch and render both canvases,\n#    model-input crops and BEVs (CPU job)\n#    make_case.py --scene host-a015-... --case detour_other\n#                 --edited scene_world.py --wait\n\n# 2. count changed canvas pixels per 12 Hz frame\nd = np.abs(f1.astype(int) - f2.astype(int)).max(2) > 12\nres.append(d[104:920].sum())\n#    -> maximum at frame 79 (19,284 px)"
+  },
+  {
+   "type": "feedback",
+   "label": "Canvases and BEV",
+   "text": "`check.json` reports ok: frame 0 is bit-identical, ego poses and frame counts match, and the edit changes the canvas in 239 frames (125 within the model window). At frame 79 the car is in the pocket instead of behind the crossing car; at frame 100 it is in the middle of the left turn about 28 m ahead; at frame 112 it is in the ego's lane, where the original canvas is empty.",
+   "media": [
+    {
+     "src": "media/canvas_pair_f79.jpg",
+     "label": "model crop, frame 79: original | edited"
+    },
+    {
+     "src": "media/canvas_pair_f100.jpg",
+     "label": "model crop, frame 100: original | edited"
+    },
+    {
+     "src": "media/bev_pair_f100.jpg",
+     "label": "BEV, frame 100: original | edited (magenta: e74eb6 trail; dashed: original footprint)"
+    }
+   ],
+   "kv": [
+    [
+     "check.json",
+     "ok: true, fails: [], warnings: []"
+    ],
+    [
+     "frame0_raw_render_max_abs_diff",
+     "0"
+    ],
+    [
+     "edit_visible",
+     "frames 60-298, 239 frames, 125 in model window, max 19,284 px"
+    ]
+   ]
+  },
+  {
+   "type": "result",
+   "label": "Edited scenario",
+   "text": "The southbound car `e74eb6`, which in the recording drives straight through the junction, now enters the left-turn pocket, slows to 6 m/s, turns left into the inner eastbound lane ahead of the waiting ego and accelerates to 12 m/s along the lane the ego later follows. Keyframe 0 and all other agents are unchanged. Video: original canvas | edited canvas | original BEV | edited BEV, model window (185 frames at 12 Hz).",
+   "media": [
+    {
+     "src": "media/result_compare.mp4",
+     "poster": "media/result_poster.jpg",
+     "label": "original | edited canvas | original | edited BEV, frames 0-184"
+    }
+   ],
+   "kv": [
+    [
+     "edited agent",
+     "e74eb6 (car), keyframes 11-125 changed"
+    ],
+    [
+     "sanity",
+     "min gap 1.30 m (agents), 22.24 m (ego); on-road 1.0; 117 visible frames in the model window"
+    ],
+    [
+     "iterations",
+     "2 (straight exit replaced by the ego's lane)"
+    ],
+    [
+     "session",
+     "~30 min, Claude Opus 5.5"
+    ]
+   ],
+   "code": "# code-world edit: detour_other (appended to scene_world.py)\ncar = scene.agent('e74eb685...')\nT0 = 11\nx0, y0, z0, _ = car.state(T0)\ns0, v0 = car._s(T0), car.speed(T0)\nPOCKET_X, R, V_TURN, V_OUT = 22.7, 13.0, 6.0, 12.0\nlane = [(e[0], e[1] - 0.4)\n        for e in (scene.ego[t] for t in range(60, 126))\n        if e[0] > 36.0]\nLANE_Y = lane[0][1]\ny_arc = LANE_Y + R\nkeep = [p for p in car.route if p[1] > y0 + 0.5]\npath = keep + [(x0, y0, z0)]\nfor i in range(1, 25):        # cosine S-shift into the pocket\n    u = i / 24\n    w = 0.5 - 0.5 * math.cos(math.pi * u)   # inlined in the file\n    path.append((x0 + (POCKET_X - x0) * w,\n                 y0 + (24.0 - y0) * u, z0))\npath.append((POCKET_X, y_arc, z0))\nfor i in range(1, 19):        # quarter circle, radius R\n    a = math.radians(5 * i)\n    path.append((POCKET_X + R - R * math.cos(a),\n                 y_arc - R * math.sin(a), z0))\npath += [(x, y, z0) for x, y in lane[1:]]\n(xa, ya), (xb, yb) = lane[-6], lane[-1]\npath.append((xb + 100.0,\n             yb + 100.0 * (yb - ya) / (xb - xa), z0))\ncar.reroute(path)\n# speed: v0 -> 6 m/s before the arc, 6 m/s on it, 6 -> 12 m/s\ncar.timing = timing           # v_of(s) integrated at 5 Hz\ncar.frame_attrs = [((0, 125), {'lyft_category': 'car'})]"
+  },
+  {
+   "type": "result",
+   "label": "Generated video",
+   "text": "MemOIR generates both scenarios from the same real first frame and the two blocks-world conditions. Only the edited vehicle is changed; the static world, the ego path and all other agents are the same.",
+   "media": [
+    {
+     "src": "../../videos/codeworld/left-turn/ours-original.mp4?v=202611192239",
+     "label": "MemOIR, original code world"
+    },
+    {
+     "src": "../../videos/codeworld/left-turn/ours-edited.mp4?v=202611192239",
+     "label": "MemOIR, edited code world"
+    }
+   ],
+   "kv": [
+    [
+     "frames",
+     "185 at 12 Hz (15.4 s)"
+    ],
+    [
+     "initial frame",
+     "real, shared by both"
+    ]
+   ]
+  }
+ ]
+}

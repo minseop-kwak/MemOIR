@@ -1,0 +1,251 @@
+{
+ "id": "codeedit-merge",
+ "title": "Code-world edit: a passing car merges into the ego lane",
+ "subtitle": "Lyft Level 5, daytime urban arterial · model window 185 frames at 12 Hz (15.3 s) · single agent session (Claude Opus 5.5)",
+ "task": "Edit the scenario in code: the car overtaking the ego on the left merges right into the ego lane ahead of the ego.",
+ "inputs": [
+  {
+   "src": "media/input_kf000.jpg",
+   "label": "keyframe 0 (0 s)"
+  },
+  {
+   "src": "media/input_kf015.jpg",
+   "label": "keyframe 15 (3 s)"
+  },
+  {
+   "src": "media/input_kf030.jpg",
+   "label": "keyframe 30 (6 s)"
+  },
+  {
+   "src": "media/input_kf045.jpg",
+   "label": "keyframe 45 (9 s)"
+  }
+ ],
+ "steps": [
+  {
+   "type": "plan",
+   "label": "Plan",
+   "text": "One vehicle of a real scene is to change its behaviour in the most plausible way that remains clearly visible in the front camera. Among the permitted edit types (a lane change to the right, a parked car pulling out, a detour onto a side road), the choice depends on the scene: the ego trajectory cannot be edited, so any new manoeuvre must leave a safe gap to the ego as it actually drove.\nProcedure: screen the 16 candidate scenes, shortlist by traffic and image quality, write the edit in `scene_world.py`, verify it with `sanity.py` (gaps to all agents and the ego, drivable area, divider crossings, visibility), revise until clean, then render the original and edited conditions and the BEV with `make_case.py`.",
+   "kv": [
+    [
+     "candidates",
+     "16 Lyft Level 5 scenes, 126 keyframes at 5 Hz each"
+    ],
+    [
+     "constraints",
+     "keyframe 0 unchanged; static world and ego path fixed; model sees keyframes 0-76"
+    ],
+    [
+     "acceptance",
+     "no overlap or near-collision, on drivable road, correct-direction lanes, visible within ~40 m"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Screening the candidate scenes",
+   "code": "# SAW: 16 candidate scenes; the edit has to show within\n#      12 Hz frames 0-184 (keyframes 0-76) and leave\n#      keyframe 0 untouched\n\n# 1. per scene: vehicles, speed, visibility in the window\nfor s in scenes:\n    sanity.py --scene s --list\n\n# 2. vehicles 6-45 m ahead of the ego, same direction,\n#    in >= 15 of keyframes 1-76 (helper screen_lead.py)\nst = a.state(t)\nrx, ry = ...          # position in the ego frame E[t]\nif 6 < rx < 45 and abs(ry) < 7 and a.speed(t) > 2: ...\n\n# 3. read 6 real frames of each shortlisted scene"
+  },
+  {
+   "type": "feedback",
+   "label": "Shortlist",
+   "text": "Scene A is ruled out because its truck already moves right in the recorded data. Scene B is overcast with a wet road. The ego in scene C travels at 13 m/s in the right-most travel lane, with parked cars along the curb, so a parked car pulling out or a car slowing for a right turn ahead of it would force the unchanged ego into a collision. A car that is already overtaking on the left and merges back ahead of the ego remains consistent with the recorded ego motion. Selected: scene C, vehicle 23852143.",
+   "media": [
+    {
+     "src": "media/shortlist.jpg",
+     "label": "real frames (keyframes 0 / 30) of the three shortlisted scenes"
+    }
+   ],
+   "kv": [
+    [
+     "A: fc3a59 (11.7 m truck)",
+     "ahead 45 -> 6 m, already changes lanes right at keyframes 12-32"
+    ],
+    [
+     "B: 739994 (SUV)",
+     "left lane, 11 -> 32 m ahead for all 76 keyframes; overcast, wet"
+    ],
+    [
+     "C: 23852143 (car)",
+     "left lane, 3 -> 47 m ahead, 16 m/s vs ego 13 m/s; clear day, buildings"
+    ],
+    [
+     "C: 8b11c0 (car)",
+     "22 m ahead of 23852143; merges into the ego lane itself at keyframes 42-66"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v1: lane change to the right",
+   "code": "# SAW: 23852143 overtakes the ego in the left lane: 3.7 m\n#      to the left, 10-21 m ahead over keyframes 24-42,\n#      ~16 m/s against 13 m/s for the ego\n\n# 1. merge 3.5 m to the right over 4 s, once it is\n#    about 11 m ahead of the ego\ncar = scene.agent('23852143d9391f3d...')\ncar.lane_change(-3.5, t0=28, t1=48)\n\n# 2. gaps, road and visibility on the 12 Hz world\nsanity.py --scene host-a009-... \\\n          --edited scene_world_v1.py"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: overlap after the model window",
+   "text": "The merge itself is clean (no overlap, on road, one lane-divider crossing, no road-divider crossing), but from 12 Hz frame 222 (keyframe ~92) the edited car overlaps 8b11c0. The car keeps its recorded overtaking speed in the new lane and runs into the slower car ahead of it. The collision lies after the model window, but it would appear in the canvas and the BEV.",
+   "kv": [
+    [
+     "WARNING",
+     "overlaps another agent in 77 frames (worst 8b11c0b38e @ 242, 0.94 of the smaller footprint)"
+    ],
+    [
+     "min_gap_other_m",
+     "0.0 (original 1.42)"
+    ],
+    [
+     "lane_divider_crossings",
+     "[94]   road_divider_crossings []"
+    ],
+    [
+     "min_onroad",
+     "1.0"
+    ],
+    [
+     "visible_in_model_window",
+     "185 / 185"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Edit v2: car following after the merge",
+   "code": "# SAW: overlap with 8b11c0 from frame 222: in the new\n#      lane the car keeps its overtaking speed (18 m/s),\n#      while 8b11c0, which merges into the same lane at\n#      keyframes 42-66, slows to 12-15 m/s\n\n# 1. keep the lane change\ncar.lane_change(-3.5, t0=28, t1=48)\n\n# 2. from keyframe 50, follow the speed of the car ahead\nlead = scene.agent('8b11c0b38eb6456a...')\nfor t in range(50, 125):\n    car.set_speed(lead.speed(t), from_t=t, to_t=t + 1)\n#    -> centre distance to 8b11c0 stays at 22 m\n\n# 3. re-check\nsanity.py --scene host-a009-... \\\n          --edited scene_world_v2.py"
+  },
+  {
+   "type": "feedback",
+   "label": "Check: clean",
+   "text": "No overlap anywhere in the clip. The smallest gap (1.27 m) is the lateral clearance to cars parked at the curb. The ego passes the same parked cars at 1.1-1.6 m. When the car crosses the lane line, the footprint gap to the ego is 15.5 m (about 1.2 s at 13 m/s), and the gap then grows. The edited speed profile is smoother than the recorded one.",
+   "media": [
+    {
+     "src": "media/gap_v1_v2.jpg",
+     "label": "top view of 23852143 (original, v1, v2) with 8b11c0 and the ego (left); centre distance to 8b11c0 per keyframe (right)"
+    }
+   ],
+   "kv": [
+    [
+     "overlap_other_frames",
+     "0   (v1: 77)"
+    ],
+    [
+     "min_gap_other_m",
+     "1.27 (parked car, after the window); 1.48 within the window"
+    ],
+    [
+     "gap to ego at the lane-line crossing",
+     "15.5 m (frame 94), increasing afterwards"
+    ],
+    [
+     "lateral motion",
+     "3.5 m in 4 s, peak 1.4 m/s; heading change <= 4.7 deg"
+    ],
+    [
+     "max |acceleration|",
+     "1.8 m/s^2 (recorded track: 4.3)"
+    ],
+    [
+     "min_onroad / road_divider_crossings",
+     "1.0 / none"
+    ],
+    [
+     "visible_in_model_window",
+     "185 / 185 frames"
+    ]
+   ]
+  },
+  {
+   "type": "code",
+   "label": "Render original and edited conditions",
+   "code": "# SAW: no overlap, on road, visible in all 185 frames;\n#      first changed keyframe 30 (12 Hz frame 70)\n\n# 1. delta-patch the boxes, render the original and edited\n#    canvases, model-input crops and BEV, run the checks\nmake_case.py --scene host-a009-... --case free \\\n             --edited scene_world.py --wait\n\n# 2. compare original and edited canvas frame by frame\nd = (abs(orig[k] - edit[k]).max(2) > 12).sum()\n#    -> largest change at frame 92 (18,929 px)"
+  },
+  {
+   "type": "feedback",
+   "label": "Canvas and BEV",
+   "text": "Frame 0 is bit-identical to the original. From frame 70 onward, the edited car moves from the left lane to directly in front of the ego and stays there (footprint gap to the ego 9-39 m within the model window). In the BEV, the dashed grey outline marks its original position in the left lane. A merge 4 keyframes earlier (keyframes 24-44) was also tested with `sanity.py`. It shortens the crossing gap from 15.5 m to 13 m without a noticeable gain in image size, so keyframes 28-48 were kept.",
+   "media": [
+    {
+     "src": "media/canvas_f092_f120_f160.jpg",
+     "label": "model-input crop, original | edited, 12 Hz frames 92 / 120 / 160"
+    },
+    {
+     "src": "media/bev_f100.jpg",
+     "label": "BEV original | edited, frame 100 (magenta: edited car)"
+    }
+   ],
+   "kv": [
+    [
+     "check.json",
+     "ok: true, fails: []"
+    ],
+    [
+     "frame-0 raw render difference",
+     "0"
+    ],
+    [
+     "changed canvas frames",
+     "229 (frames 70-298), 115 in the model window"
+    ],
+    [
+     "largest change",
+     "18,929 px at frame 92"
+    ]
+   ]
+  },
+  {
+   "type": "result",
+   "label": "Edited scenario",
+   "text": "The car that overtakes the ego on the left merges into the ego lane about 15 m ahead of it over 4 s. It then adapts its speed to the car in front, 22 m ahead. Only these lines were appended to `scene_world.py`. Video: original canvas | edited canvas | original BEV | edited BEV, model window (frames 0-184).",
+   "media": [
+    {
+     "src": "media/result_compare.mp4",
+     "poster": "media/result_poster.jpg",
+     "label": "original | edited canvas | original | edited BEV, 185 frames at 12 Hz"
+    },
+    {
+     "src": "media/still_f092.jpg",
+     "label": "frame 92: original (left lane) vs edited (in the ego lane)"
+    }
+   ],
+   "kv": [
+    [
+     "edited agent",
+     "23852143 (car), keyframes 30-125 changed"
+    ],
+    [
+     "iterations",
+     "v1 collided with the car ahead after the window -> v2 car following"
+    ],
+    [
+     "sanity",
+     "no overlap; min gap 1.27 m (parked car); on road 100 %; visible 185 / 185 frames"
+    ]
+   ],
+   "code": "# appended to scene_world.py (case free)\ncar = scene.agent(\n    '23852143d9391f3dabf82d623da49798ad72c7738508f887220f9b1672eace9c')\nlead = scene.agent(\n    '8b11c0b38eb6456abe4591b256942554851f25ce0285a224f76a3c56cc51a9b0')\n\n# merge 3.5 m to the right over 4 s (keyframes 28 -> 48)\ncar.lane_change(-3.5, t0=28, t1=48)\n\n# then follow the speed of the car ahead in that lane\nfor t in range(50, 125):\n    car.set_speed(lead.speed(t), from_t=t, to_t=t + 1)"
+  },
+  {
+   "type": "result",
+   "label": "Generated video",
+   "text": "MemOIR generates both scenarios from the same real first frame and the two blocks-world conditions. Only the edited vehicle is changed; the static world, the ego path and all other agents are the same.",
+   "media": [
+    {
+     "src": "../../videos/codeworld/merge/ours-original.mp4?v=202611192239",
+     "label": "MemOIR, original code world"
+    },
+    {
+     "src": "../../videos/codeworld/merge/ours-edited.mp4?v=202611192239",
+     "label": "MemOIR, edited code world"
+    }
+   ],
+   "kv": [
+    [
+     "frames",
+     "185 at 12 Hz (15.4 s)"
+    ],
+    [
+     "initial frame",
+     "real, shared by both"
+    ]
+   ]
+  }
+ ]
+}
