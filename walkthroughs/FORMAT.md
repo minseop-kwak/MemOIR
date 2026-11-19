@@ -81,6 +81,28 @@ So, when you log a session:
 
 `duration` on a `code` step sets the time of the whole slide (code + its feedback).
 
+## Writing a code step: the reasoning structure
+
+The player styles comment lines so the agent's reasoning reads as the backbone of the slide:
+
+```python
+# SAW: frames 0 / 100 / 150 agree with the markings; in      <- leading "# SAW:" lines (and their
+#      frame 198 the lines deviate ~1 m to the left              "#   " continuations) become a SAW box
+
+# 1. replace the straight frame by one following the ego path   <- numbered parts: section headers
+F = roadmodel.frame(c4, curved=True)
+roadmodel.build(c4, F, spec)
+#    -> frame 180: lines still diverge from the markings     <- "#    -> ..." : what the log reports came out
+```
+
+- SAW: what the agent observed, paraphrased from its own cell notes (`# SAW:` in SceneClaw cells).
+- `# 1.`, `# 2.` ...: what it does, paraphrased from its `# DO:` notes; never claim more than the log shows.
+- 3-6 statements, one per line; no `;`-joined lines; long literals and bookkeeping arguments become `...`;
+  long calls are broken across lines with aligned keyword arguments. Identifiers stay verbatim.
+- Keep lines under about 62 characters so they fit the code column at 1440 px without wrapping.
+- The feedback steps after it are shown as CHECK; their images are placed below the code and the check text.
+- Register: professional and neutral ("deviates", "re-aligns", "corrects"), no colloquial or emphatic phrasing.
+
 Paths in `src` and `poster` are relative to the json file. Videos play muted and looped while their
 slide is on screen; give them a `poster`. Images open full size in a new tab when clicked; images
 wider than 2.2:1 (2.6:1 in the output column of a code slide) take a full row.

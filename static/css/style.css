@@ -573,3 +573,5 @@ footer .wrap { display: flex; justify-content: center; }
 @media (min-width: 980px) {
   .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 48px; }
 }
+
+.card .card-lead { margin: 0 0 10px; color: var(--ink-2); }

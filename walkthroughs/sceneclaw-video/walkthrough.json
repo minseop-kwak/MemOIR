@@ -1,7 +1,7 @@
 {
  "id": "sceneclaw-video",
- "title": "SceneClaw: driving video to a 4D code world",
- "subtitle": "Waymo Open Dataset, San Francisco, day · 199 frames at 10 fps · one agent session (v23.6)",
+ "title": "SceneClaw: from a driving video to a 4D code world",
+ "subtitle": "Waymo Open Dataset, San Francisco, daytime · 199 frames at 10 fps · single agent session (v23.6)",
  "task": "Reconstruct this driving clip as an editable 4D blocks world.",
  "inputs": [
   {
@@ -25,11 +25,11 @@
   {
    "type": "plan",
    "label": "Plan",
-   "text": "Build the clip in four phases, each closed by a check bar: (A) camera, ground and road; (B) buildings and street furniture; (C) vehicles, people and trees; (D) one whole-scene look, then export `scene_world.py`. Tools only propose; every proposal is checked on overlays of the photo and on the BEV before it is kept.\nFirst look: an 8-frame grid, ego speed and yaw, camera jolts, and a metric-scale check.",
+   "text": "The clip is reconstructed in four phases, each concluded by an explicit acceptance check: (A) camera, ground and road; (B) buildings and street furniture; (C) vehicles, pedestrians and vegetation; (D) a whole-scene review, followed by export to `scene_world.py`. Perception tools only propose; each proposal is verified against overlays on the camera frames and against the bird's-eye view (BEV) before it is accepted.\nInitial inspection: an 8-frame overview, ego speed and yaw, camera pose discontinuities, and a metric-scale test.",
    "media": [
     {
      "src": "media/look_grid.jpg",
-     "label": "8-frame look grid (frames 0, 28, 56, 84 / 113, 141, 169, 198)"
+     "label": "8-frame overview (frames 0, 28, 56, 84 / 113, 141, 169, 198)"
     }
    ],
    "kv": [
@@ -38,12 +38,12 @@
      "0 until ~f80, then up to 15"
     ],
     [
-     "camera jolts",
+     "pose discontinuities",
      "f160-169, f189-196"
     ],
     [
      "camera fit",
-     "height 2.27 m, pitch down 0.94 deg, rmse 0.018"
+     "height 2.27 m, pitch 0.94 deg downward, rmse 0.018"
     ],
     [
      "scale_check",
@@ -53,23 +53,23 @@
   },
   {
    "type": "code",
-   "label": "Ground and road evidence",
-   "code": "# SAW: 19th Ave-like boulevard, tram median on left, ego stopped f0-~80 behind a Kia\n#      then drives straight through a junction (~f110-140)\ng = ground.fit(c4)\nground.install(c4, g); g.save(c4)\nF = roadmodel.frame(c4, curved=False)\nev = roadmodel.evidence(c4, F)\nP = roadtools.paint_points(c4)      # Vistas lane / curb / crosswalk pixels lifted to the ground\npng = roadtools.evidence_bev(c4, P, F)"
+   "label": "Ground surface and lane-marking evidence",
+   "code": "# SAW: a boulevard with a tram median on the left; the ego\n#      vehicle is stationary behind a Kia until ~f80, then\n#      proceeds straight through a junction (~f110-140)\n\n# 1. fit one ground surface to DA3 road depth and ego path\ng = ground.fit(c4)\nground.install(c4, g)\n\n# 2. define a road frame: s along the drive, t to the left\nF = roadmodel.frame(c4, curved=False)\n\n# 3. lift the Vistas lane-marking pixels onto the ground\nP = roadtools.paint_points(c4)\n\n# 4. render them in (s, t) from above to read lane offsets\npng = roadtools.evidence_bev(c4, P, F)"
   },
   {
    "type": "feedback",
-   "label": "Paint in the road frame",
-   "text": "Lane paint at t -2.1 / -6.0 / -9.1, left curb +3..+2.5 (median with railing), crosswalks s 37-50 and 70-80 (cross street s 50-70), stop line ~s 122.",
+   "label": "Lane markings in the road frame",
+   "text": "Lane markings at t = -2.1 / -6.0 / -9.1 m; median curb at t = +3.0 to +2.5 m (median with railing); crosswalks at s = 37-50 m and 70-80 m (cross street at s = 50-70 m); stop line near s = 122 m.",
    "media": [
     {
      "src": "media/evidence_bev.jpg",
-     "label": "evidence_bev: Vistas paint in (s along, t left); white dots = ego path"
+     "label": "evidence_bev: Vistas lane markings in (s along, t left); white dots: ego path"
     }
    ],
    "kv": [
     [
      "ground",
-     "path mode, 0.020 m error vs near DA3 road; path flat (-0.26 m over 135 m)"
+     "path mode, 0.020 m error against near-range DA3 road; path nearly level (-0.26 m over 135 m)"
     ],
     [
      "paint_points",
@@ -78,22 +78,18 @@
     [
      "evidence t (m)",
      "-9.09 dashed · -5.98 · -2.15 · +1.70 · edge +2.85"
-    ],
-    [
-     "roadmodel.propose",
-     "5 lines, 0 junction mouths"
     ]
    ]
   },
   {
    "type": "code",
-   "label": "Road from measured offsets",
-   "code": "# SAW: white +1.7 (s<36, double yellow edge), yellow +2.1, curb +3.3 (s<36) / +2.5 (s>85);\n#      white -2.2/-1.9, -6.0; right kerb -12.7      (roadtools.t_peaks per s-band)\nL=[]\nL.append(dict(t=1.9,type=\"road_line\",subtype=\"double_yellow\",s0=-60,s1=38))\nL.append(dict(t=3.3,type=\"road_edge\",subtype=None,s0=-60,s1=40))\nL.append(dict(t=2.5,type=\"road_edge\",subtype=None,s0=74,s1=200))\nfor tt in (-2.1,-6.0,-9.3): L.append(dict(t=tt,type=\"road_line\",subtype=\"dashed_white\",s0=-60,s1=200))\nL.append(dict(t=-12.7,type=\"road_edge\",subtype=None,s0=-60,s1=200))\nspec=dict(lines=L, mouths=[...right s50-82, left s40-74...], s_range=(-60,200))\nroadmodel.build(c4, F, spec)        # + two skewed crosswalks (roadtools.emit)\nroadmodel.check(c4, frames=[0,100,150,198])"
+   "label": "Road model from measured offsets",
+   "code": "# SAW: marking peaks (t_peaks) at t = +1.7 / -2.2 / -6.0 m,\n#      yellow at +2.1, median curb at +3.3 / +2.5, right\n#      kerb at -12.7\n\n# 1. encode the cross-section as a spec, one line per offset\nL = []\nL.append(dict(t=1.9, type=\"road_line\",\n              subtype=\"double_yellow\", ...))\nL.append(dict(t=3.3, type=\"road_edge\", ...))\nfor tt in (-2.1, -6.0, -9.3):\n    L.append(dict(t=tt, type=\"road_line\",\n                  subtype=\"dashed_white\", ...))\nL.append(dict(t=-12.7, type=\"road_edge\", ...))\n\n# 2. build the lines along the frame, with junction mouths\nspec = dict(lines=L, mouths=[...], s_range=(-60, 200))\nroadmodel.build(c4, F, spec)\n\n# 3. project the lines into four frames for verification\nroadmodel.check(c4, frames=[0, 100, 150, 198])"
   },
   {
    "type": "feedback",
-   "label": "Check: lines on the paint?",
-   "text": "f0, f100, f150: lines on the paint. f198: lines look ~1 m left of the dashes and the median kerb is missing near the camera.",
+   "label": "Projected lines against the markings",
+   "text": "Frames 0, 100 and 150: the projected lines coincide with the markings. Frame 198: the lines deviate approximately 1 m to the left of the dashes, and the median kerb is absent near the camera.",
    "media": [
     {
      "src": "media/road_check_f0_f100_f150_f198.jpg",
@@ -103,61 +99,57 @@
    "kv": [
     [
      "roadmodel.build",
-     "52 road lines / edges (30 observed parts, 22 built continuations past the view)"
+     "52 road lines and edges (30 observed segments, 22 extrapolated beyond the view)"
     ],
     [
      "roadtools.emit",
-     "2 skewed crosswalks"
+     "2 oblique crosswalks"
     ]
    ]
   },
   {
    "type": "code",
-   "label": "Measure the drift, bend the road",
-   "code": "ep=np.asarray(vid.ego_path())[:, :2]; st=np.asarray(F.to_st(ep))\n# SAW: ego drifts to t+0.8 at s131 and the right kerb goes -12.7 -> -11.2 by s160\nF = roadmodel.frame(c4, curved=True)\nc4.lines=[]; roadmodel.build(c4, F, spec)\n# SAW: f180: lines diverge from the paint far out (street bends left past s~140)\npr=roadtools.offset_profile(F, P[\"white\"][:,:2], 90, 200, bin_m=10, t_band=(-4,0), min_n=10)\n# SAW: lane paint t const to s125, then drifts left (+0.3..+1.5 by s155-165)\nF0=F\nF=geomtools.frame_bend(F0,145,200,6.0)\nc4.lines=[]; roadmodel.build(c4, F, spec)\nprint(c4.still(180)['overlay'])"
+   "label": "Road curvature from lane-marking offsets",
+   "code": "# SAW: frames 0 / 100 / 150 agree with the markings; in\n#      frame 198 the lines deviate ~1 m to the left\n\n# 1. replace the straight frame by one following the ego path\nF = roadmodel.frame(c4, curved=True)\nroadmodel.build(c4, F, spec)\n#    -> frame 180: lines still diverge from the markings far ahead\n\n# 2. measure the lateral offset of the markings over s 90-200\npr = roadtools.offset_profile(F, P[\"white\"][:, :2],\n                              90, 200, ...)\n#    -> t constant up to s 125, then +0.3 to +1.5 m to the left\n\n# 3. re-align the frame: 6 deg left curve from s 145, R 200 m\nF0 = F\nF = geomtools.frame_bend(F0, 145, 200, 6.0)\nroadmodel.build(c4, F, spec)\n\n# 4. re-render frame 180 for comparison with the image\nc4.still(180)"
   },
   {
    "type": "feedback",
-   "label": "Recheck at frame 180",
-   "text": "The bend fixes the far lines (f180 / f190).",
+   "label": "Frame 180 before and after re-alignment",
+   "text": "With the curved segment, the distant lines coincide with the markings (frames 180 and 190).",
    "media": [
     {
      "src": "media/f180_before_bend.jpg",
-     "label": "f180, curved frame: lines leave the paint far out"
+     "label": "f180, frame along the ego path: distant lines diverge from the markings"
     },
     {
      "src": "media/f180_after_bend.jpg",
-     "label": "f180, after frame_bend: lines follow the bend"
+     "label": "f180, after frame_bend: lines follow the road curvature"
     }
    ],
    "kv": [
     [
-     "offset_profile t-band (-4, 0)",
+     "offset_profile, t in (-4, 0)",
      "s95 -2.0 · s125 -2.0 · s155 -1.6 · s165 -0.4"
     ],
     [
      "frame_bend",
-     "straight to s 145, left bend R 200 m over 6.0 deg (arc 20.9 m)"
+     "straight to s 145, left curve R 200 m over 6.0 deg (arc 20.9 m)"
     ]
    ]
   },
   {
    "type": "code",
-   "label": "Buildings and the gate wall",
-   "code": "c4.static_world(lines=False, vegetation=False)   # SAM3-video buildings / walls on DA3 points\nfarblocks.align_check(c4); c4.bev_world()\n# SAW: b000 sits on the median over a bus (junk); b001 (sign wall) spans onto the road\n_,i0=problems.find(c4,\"building:b000\"); del c4.prisms[i0]\n# ... b001 -> wall w011; the last placement ran along the road\n# SAW: it covers only the left part of the sign; the gate (4 pillars) faces the camera\nk=1920/1060   # pixel picks read off the 1060-px overlay\nA=geomtools.triangulate(vid,[(170,(568*k,318*k)),(180,(585*k,318*k)),(190,(650*k,315*k))])\nB=geomtools.triangulate(vid,[(170,(775*k,320*k)),(180,(838*k,312*k)),(190,(968*k,312*k))])\n# SAW: B = (181.2,-17.9) top 3.67; A weak parallax -> cut A's rays at B's top height\na=np.array([[190.5,-15.0],[178.4,-26.9]]); xy=np.asarray(F.to_xy(a[:,0],a[:,1]))\nc4.prisms[iw].update(poly=[...0.6 m thick...], z0=z0, z1=z0+3.4)"
+   "label": "Gate wall from triangulated pillars",
+   "code": "# SAW: the wall placed along the road covers only the left\n#      part of the sign; the gate (4 pillars) faces the camera\n\n# 1. triangulate the outer pillar tops over f170 / f180 / f190\nA = geomtools.triangulate(vid, [(170, ...), (180, ...),\n                                (190, ...)])\nB = geomtools.triangulate(vid, [(170, ...), (180, ...),\n                                (190, ...)])\n#    -> B = (181.2, -17.9), top 3.67 m; A: insufficient parallax\n\n# 2. locate pillar A on its own rays at the height of B's top\nlam = (3.67 - C[2]) / D[2]\nX = C + lam * D\n\n# 3. rebuild wall w011 between the two pillars, 3.4 m high\na = np.array([[190.5, -15.0], [178.4, -26.9]])\nxy = np.asarray(F.to_xy(a[:, 0], a[:, 1]))\nc4.prisms[iw].update(poly=..., z0=z0, z1=z0 + 3.4)\n\n# 4. re-render frame 170\nc4.still(170)"
   },
   {
    "type": "feedback",
-   "label": "Gate wall on the sign",
-   "text": "b000 sits on the median over a bus (junk); b001 (the Parkmerced sign wall) spans onto the road. The wall along the road covered only the left part of the sign; rebuilt between the triangulated gate pillars, w011 now sits on the Parkmerced sign (f170).",
+   "label": "Wall position on the gate sign",
+   "text": "Before: the wall placed along the road covered only the left part of the sign. After: positioned between the triangulated gate pillars, wall w011 coincides with the sign (frame 170).",
    "media": [
     {
-     "src": "media/bev_buildings_proposal.jpg",
-     "label": "BEV of the tool proposal (rotated: driving direction to the right); b000 on the median"
-    },
-    {
      "src": "media/f170_wall_along_road.jpg",
-     "label": "f170 (detail), wall along the road: covers only the left of the sign"
+     "label": "f170 (detail), wall along the road: covers only the left part of the sign"
     },
     {
      "src": "media/f170_gate_wall.jpg",
@@ -166,36 +158,28 @@
    ],
    "kv": [
     [
-     "static_world",
-     "5 building prisms + 6 wall pieces from SAM3-video + DA3"
-    ],
-    [
-     "align_check",
-     "5 slabs, mean IoU 0.053, 5 CHECK"
-    ],
-    [
      "triangulate B",
-     "(181.2, -17.9, 3.67) residual 0.18 m, parallax 6.4 deg"
+     "(181.2, -17.9, 3.67), residual 0.18 m, parallax 6.4 deg"
     ],
     [
      "triangulate A",
-     "parallax 1.7 deg (range weak) -> cut its rays at B's top height"
+     "parallax 1.7 deg (range unreliable); rays intersected at the height of B's top"
     ]
    ]
   },
   {
    "type": "code",
-   "label": "Vehicles, checked with D-FINE",
-   "code": "# DO: vehicles + cyclists from tools; dfine_check + sheet\ntrs=[t for t in kit4d.tracks_from_tools(vid) if t.type!=\"TYPE_PEDESTRIAN\"]   # WildDet3D boxes keyed by SAM3-video ids\nc4.tracks=[t for t in c4.tracks if t.type not in (\"TYPE_VEHICLE\",\"TYPE_PEDESTRIAN\",\"TYPE_CYCLIST\")]+trs\nrows=vehtools.dfine_check(c4)      # is each world box supported by an independent D-FINE box?\nprint(vehtools.dfine_sheet(c4, rows))\nc4.save()"
+   "label": "Vehicle tracks verified with D-FINE",
+   "code": "# SAW: phase B complete: 16 traffic lights, 15 signs,\n#      buildings, walls, gate wall and median railing\n\n# 1. vehicle tracks from the tools: WildDet3D 3D boxes,\n#    associated over time by SAM3-video identities\ntrs = [t for t in kit4d.tracks_from_tools(vid)\n       if t.type != \"TYPE_PEDESTRIAN\"]\nc4.tracks = [...] + trs\n\n# 2. test each world box against an independent 2D\n#    detector (D-FINE)\nrows = vehtools.dfine_check(c4)\n\n# 3. crop sheet of the weakly supported tracks\nvehtools.dfine_sheet(c4, rows)"
   },
   {
    "type": "feedback",
-   "label": "D-FINE support sheet",
-   "text": "veh086 / veh048: no vehicle; veh044 on the median railing; veh066 / veh074 0% support, off their cars; the 16-49% ones are far or occluded cars that sit on cars. Delete veh044 / 048 / 066 / 074 / 086.",
+   "label": "D-FINE support per track",
+   "text": "veh086 and veh048: no vehicle present; veh044 lies on the median railing; veh066 and veh074 have 0% support and are displaced from their vehicles. Tracks with 16-49% support correspond to distant or occluded vehicles. veh044, veh048, veh066, veh074 and veh086 are removed.",
    "media": [
     {
      "src": "media/dfine_check_top4.jpg",
-     "label": "dfine_sheet, first 4 of 18 rows (red = world box, green = D-FINE)"
+     "label": "dfine_sheet, first 4 of 18 rows (red: world box, green: D-FINE)"
     }
    ],
    "kv": [
@@ -219,13 +203,13 @@
   },
   {
    "type": "code",
-   "label": "Suspicious far-side movers",
-   "code": "# per-vehicle table in the road frame (s range, mean t, speed along s)\n# SAW: veh071/075/078/079/081/082 at t 21-25 move +s at 7-14 m/s (same as ego):\n#      depth drift or id swaps along the oncoming queue?\nfor n in (\"agent:veh078\",\"agent:veh079\"): print(assess.strip(c4, n))"
+   "label": "Implausible motion on the opposite carriageway",
+   "code": "# SAW (per-vehicle table in the road frame): veh071 / 075 /\n#      078 / 079 / 081 / 082 at t = 21-25 m move in +s at\n#      7-14 m/s, the ego speed: depth drift, or identity\n#      switches along the oncoming queue?\n\n# 1. crop strip along each questionable track\nfor n in (\"agent:veh078\", \"agent:veh079\"):\n    print(assess.strip(c4, n))"
   },
   {
    "type": "feedback",
-   "label": "One box, many cars",
-   "text": "veh078 is a tiny box sliding along the oncoming queue (id swaps), so the +s far-side movers are junk; the oncoming queue is mostly static. The agent deletes those 7 tracks and places the oncoming carriageway from the rows of oncoming cars (no paint is measurable that far).",
+   "label": "One box across several vehicles",
+   "text": "veh078 is a small box that moves along the oncoming queue through identity switches; the +s movers on the opposite side are therefore spurious, and the oncoming queue is largely stationary. The agent removes these 7 tracks and places the opposite carriageway from the rows of oncoming vehicles, since no lane markings are measurable at that distance.",
    "media": [
     {
      "src": "media/strip_veh078.jpg",
@@ -235,27 +219,27 @@
    "kv": [
     [
      "strip veh078",
-     "frames 127-180, lwh [2.1, 0.78, 1.45], speed median 11.3 m/s"
+     "frames 127-180, lwh [2.1, 0.78, 1.45], median speed 11.3 m/s"
     ]
    ]
   },
   {
    "type": "code",
-   "label": "An empty box at frame 120",
-   "code": "# SAW: f120: an empty box left of the ego lane near the median (~u390-458, v365-430)\nfor f,(u0,u1,v0,v1) in ((120,(390,458,365,430)),(175,(955,1060,390,525))):\n    for t in c4.tracks:\n        if t.type!=\"TYPE_VEHICLE\" or t.at(f) is None: continue\n        c=np.asarray(t.center(f),float); r=vid.project_world(f, c[None,:3]); uv=np.asarray(r[0],float).reshape(-1)[:2]/k\n        if u0-30<uv[0]<u1+30 and v0-40<uv[1]<v1+40: print(f, t.id, np.round(uv), 'obs', t.obs_ts[0], t.obs_ts[-1], 'moving', t.moving, np.round(sv(t,f),1))\n# -> 120 veh002 [426. 394.] obs 0 198 moving True [58.7  2.2]\n# SAW: the empty box is the lead Kia veh002 drifting to t +2.2 (it drives in the ego lane, t ~ -0.1)\nvehtools.lane_hold(c4, T[\"veh002\"], F, t_lat=-0.1, sense=1, s_fit=\"monotone\", dry=False)\nr=vehtools.tyre_row_check(c4, T[\"veh002\"])\nprint(c4.still(120)['overlay'])"
+   "label": "Unoccupied box at frame 120",
+   "code": "# SAW: frame 120: an unoccupied box left of the ego lane,\n#      near the median (~u390-458, v365-430)\n\n# 1. identify the track that projects into that region\nfor f, (u0, u1, v0, v1) in ((120, (390, 458, 365, 430)), ...):\n    for t in c4.tracks:\n        ...\n        if u0-30 < uv[0] < u1+30 and v0-40 < uv[1] < v1+40:\n            print(f, t.id, np.round(uv), ...)\n#    -> 120 veh002 [426. 394.] ... [58.7  2.2]: the lead Kia,\n#       at t = +2.2 m, although it travels in the ego lane\n\n# 2. constrain veh002 to its lane, timing preserved (monotone)\nvehtools.lane_hold(c4, T[\"veh002\"], F,\n                   t_lat=-0.1, sense=1,\n                   s_fit=\"monotone\", dry=False)\n\n# 3. re-render frame 120\nc4.still(120)"
   },
   {
    "type": "feedback",
-   "label": "Kia box back on the Kia",
-   "text": "Kia box back on the Kia at f120. Problem P4 closed as fixed.",
+   "label": "Lead vehicle box after lane constraint",
+   "text": "At frame 120 the box of veh002 coincides with the lead vehicle. Problem P4 is closed as resolved.",
    "media": [
     {
      "src": "media/f120_before_lane_hold.jpg",
-     "label": "f120 before: box drifted left of the lead Kia"
+     "label": "f120 before: box displaced to the left of the lead vehicle"
     },
     {
      "src": "media/f120_after_lane_hold.jpg",
-     "label": "f120 after lane_hold at t -0.1"
+     "label": "f120 after lane_hold at t = -0.1 m"
     }
    ],
    "kv": [
@@ -265,19 +249,19 @@
     ],
     [
      "tyre_row_check",
-     "box near face vs tyre ray: median +0.03 m"
+     "box front face vs tyre ray: median +0.03 m"
     ]
    ]
   },
   {
    "type": "result",
-   "label": "Code world",
-   "text": "After one whole-scene loop (crowns over sky, floating far cars, track holes fixed) the world is exported as `scene_world.py`: every object is a line of editable Python, and agents carry a route and timing. Video: camera | blocks render of the code world | BEV.",
+   "label": "Exported code world",
+   "text": "After one whole-scene review (tree crowns extending into the sky, distant vehicles above the ground and gaps within tracks corrected), the world is exported as `scene_world.py`: each object is one editable Python statement, and each agent carries a route and a timing. Video: camera | rendering of the code world | BEV.",
    "media": [
     {
      "src": "media/result_camera_canvas_bev.mp4",
      "poster": "media/result_poster.jpg",
-     "label": "camera | rendered code world | BEV, 199 frames"
+     "label": "camera | rendering of the code world | BEV, 199 frames"
     }
    ],
    "kv": [
@@ -286,19 +270,19 @@
      "52 vehicles · 17 pedestrians · 16 traffic lights · 15 signs"
     ],
     [
-     "static",
+     "static elements",
      "4 buildings · 6 walls · 21 tree crowns · 101 road lines"
     ],
     [
      "final checks",
-     "no vehicle pops, 0 holes; 13 brief overlaps left on the far oncoming side"
+     "no vehicle appearing or vanishing in view, no track gaps; 13 brief overlaps remain on the distant opposite carriageway"
     ],
     [
      "session",
      "89 kernel cells, ~50 min, Claude Opus 5.5 (medium effort)"
     ]
    ],
-   "code": "scene = Scene('waymo/7447927974619745860_820_000_840_000/video_agent_v23_6', fps=10, n_frames=199, camera={...})\nscene.wall('w011', [(190.924, -3.982), (181.435, -18.053), (180.937, -17.717), (190.426, -3.647)], z0=-0.372, z1=3.078, source='observed')\nscene.building('b002', [(29.83, -17.255), (48.049, -17.186), (48.193, -32.186), (29.777, -32.255)], z0=-0.047, z1=5.153, source='observed')\nscene.line('road_line', points=[(-58.173, 2.176, 0.046), (1.826, 1.897, 0.005)], source='built', model=True, subtype='double_yellow')\nscene.static_object('tl005', 'TYPE_TRAFFIC_LIGHT', at=(47.085, -15.616, 3.394), size=(0.3, 1.03, 1.951), heading=2.8026, frames=(0, 198),\n    attrs={'facing_ego': True, 'state': 'green'}, ...)\n#   <- P4  lead Kia drifts 2 m left of its lane mid-clip -> fixed\nscene.car('veh002', kind='car', size=(4.2, 1.8, 1.62),\n    route=[(8.816, -0.154, 0.805), (23.267, -0.319, 0.79), (30.714, -0.358, 0.779), ...],\n    timing={0: 0, 64: 0.008, 65: 0.03, 66: 0.175, 68: 0.525, 70: 0.991, ...},\n    moving=True, source='observed', attrs={'subclass': 'car', 'parked': False})"
+   "code": "scene = Scene('waymo/...', fps=10, n_frames=199,\n              camera={...})\n\n# buildings / walls (world footprints, z0..z1)\nscene.wall('w011', [(190.924, -3.982), ...],\n           z0=-0.372, z1=3.078, source='observed')\n\n# map (lane lines, road edges, crosswalks)\nscene.line('road_line', points=[(-58.173, 2.176, 0.046), ...],\n           source='built', ..., subtype='double_yellow')\n\n# static objects (traffic lights, signs, poles, lights)\nscene.static_object('tl005', 'TYPE_TRAFFIC_LIGHT',\n                    at=(47.085, -15.616, 3.394), ...,\n                    attrs={'facing_ego': True,\n                           'state': 'green'},\n                    ...)\n\n#   <- P4  lead Kia drifts 2 m left of its lane mid-clip -> fixed\nscene.car('veh002', kind='car', size=(4.2, 1.8, 1.62),\n          route=[(8.816, -0.154, 0.805), ...],\n          timing={0: 0, 64: 0.008, 65: 0.03, ...},\n          moving=True, source='observed', ...)"
   }
  ]
 }

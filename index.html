@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="static/css/style.css?v=202611191921">
-  <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191933">
+  <link rel="stylesheet" href="static/css/style.css?v=202611191956">
+  <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
 </head>
 <body>
 
@@ -168,8 +168,9 @@
 
     <div class="cols">
       <div class="card">
-        <p class="card-k">(a) Perceive</p>
-        <h4>Off-the-shelf perception</h4>
+        <p class="card-k">(a) Perception tools</p>
+        <h4>Called by the agent on demand</h4>
+        <p class="card-lead">Each tool is a function in the agent's Python kernel; the agent decides when to call it and inspects the result.</p>
         <ul>
           <li><b>Depth Anything 3</b> (multi-view): metric depth and camera poses estimated from the video</li>
           <li><b>Mask2Former</b> panoptic segmentation and <b>Mapillary Vistas</b> lane markings</li>
@@ -179,11 +180,11 @@
         </ul>
       </div>
       <div class="card">
-        <p class="card-k">(b) Check</p>
-        <h4>Overlay checks and repair</h4>
+        <p class="card-k">(b) Verification tools</p>
+        <h4>Called after every edit</h4>
         <ul>
-          <li>The agent compares its world against image overlays and a bird's-eye view at several scales, including far-range sky and road checks, and corrects any discrepancies.</li>
-          <li>The loop concludes with a final overlay check on the first, a middle, and the last frame.</li>
+          <li>Rendering tools project the current world onto the image and into a bird's-eye view at several scales, including far-range sky and road views; the agent compares the result with the video and corrects any discrepancies.</li>
+          <li>A final overlay check on the first, a middle, and the last frame concludes the loop.</li>
         </ul>
       </div>
       <div class="card is-ours">
@@ -277,8 +278,8 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <p class="desc">A target vehicle (green box) leaves the view and returns with the same appearance.</p>
     <div class="compare" data-set="consistency"></div>
 
-    <h3 class="sub">Minute-Long Generation</h3>
-    <p class="desc">Minute-long generations. The ego vehicle makes a U-turn and drives back along the same street, so buildings and parked cars are seen again from the other side.</p>
+    <h3 class="sub" id="long-horizon-uturn">Long-Horizon Driving Video Generation with Instance Consistency</h3>
+    <p class="desc">Minute-long generations in which the ego vehicle makes a U-turn and drives back along the same street, so buildings and parked cars are seen again from the other side. All methods start from the same real first frame.</p>
     <div class="compare" data-set="long-horizon"></div>
 
     <h3 class="sub" id="consistency-revisit">Forward–Reverse Revisit Consistency</h3>
@@ -323,7 +324,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611191940"></script>
-<script src="static/js/walkthrough.js?v=202611191933"></script>
+<script src="static/js/main.js?v=202611191956"></script>
+<script src="static/js/walkthrough.js?v=202611191956"></script>
 </body>
 </html>

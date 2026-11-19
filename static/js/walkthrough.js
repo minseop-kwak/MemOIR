@@ -8,7 +8,7 @@
   "use strict";
 
   var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var KIND = { plan: "Plan", code: "Code", feedback: "Feedback", result: "Result" };
+  var KIND = { plan: "Plan", code: "Code", feedback: "Check", result: "Result" };
 
   /* ---------- icons (inline SVG, stroke = currentColor) ---------- */
   function svg(d, extra) {
@@ -66,10 +66,38 @@
     }
     return out + esc(line.slice(last));
   }
-  function codeBlock(code) {
-    var lines = String(code).replace(/\s+$/, "").split("\n");
-    return '<pre class="wt-code" tabindex="0"><code>' + lines.map(function (l) {
-      return '<span class="wt-ln">' + (hlLine(l) || " ") + "</span>";
+  // Comment lines carry the agent's reasoning: "# SAW: ..." (what it observed), "# 1. ..." (numbered
+  // parts of what it does), "#    -> ..." (what came out). They get their own styles.
+  function splitSaw(code) {
+    var lines = String(code || "").replace(/\s+$/, "").split("\n"), saw = [], i = 0;
+    if (lines.length && /^#\s*SAW\b/.test(lines[0])) {
+      saw.push(lines[0].replace(/^#\s*SAW\s*:?\s*/, ""));
+      i = 1;
+      while (i < lines.length && /^#\s{2,}\S/.test(lines[i])) { saw.push(lines[i].replace(/^#\s+/, "")); i++; }
+      while (i < lines.length && !lines[i].trim()) i++;
+    }
+    return { saw: saw.join(" "), lines: lines.slice(i) };
+  }
+  function sawBox(text) {
+    return text ? '<div class="wt-saw"><span class="wt-saw-k">Saw</span><p>' + rich(text) + "</p></div>" : "";
+  }
+  function codeBlock(code, lines) {
+    lines = lines || String(code).replace(/\s+$/, "").split("\n");
+    var mode = null;   // continuation of the previous full-line comment: "h" header, "o" outcome, "s" saw
+    return '<pre class="wt-code" tabindex="0"><code>' + lines.map(function (l, i) {
+      var t = l.trim();
+      if (!t) { mode = null; return '<span class="wt-ln wt-blank"> </span>'; }
+      if (t.charAt(0) === "#") {
+        var body = t.replace(/^#\s*/, ""), cls;
+        if (/^SAW\b/.test(body)) cls = mode = "s";
+        else if (/^(->|<-)/.test(body)) cls = mode = "o";
+        else if (/^\d+\.\s/.test(body) || i === 0 || !lines[i - 1].trim()) cls = mode = "h";
+        else if (mode && /^#\s{2,}/.test(t)) cls = mode;
+        else cls = mode = "c";
+        return '<span class="wt-ln wt-ln-' + cls + '">' + esc(l) + "</span>";
+      }
+      mode = null;
+      return '<span class="wt-ln">' + hlLine(l) + "</span>";
     }).join("") + "</code></pre>";
   }
 
@@ -123,7 +151,9 @@
     var st = sl.step || sl.code;
     if (st.duration && sl.kind !== "pair") return { dur: +st.duration, reveal: 0 };
     if (sl.kind === "pair") {
-      var codeT = 2200 + nLines(sl.code.code) * 420 + (sl.code.text || "").length * 30;
+      var parts = splitSaw(sl.code.code);
+      var nonBlank = parts.lines.filter(function (l) { return l.trim(); }).length;
+      var codeT = 2600 + nonBlank * 430 + parts.saw.length * 25 + (sl.code.text || "").length * 30;
       var fbT = sl.fbs.reduce(function (a, f) { return a + fbTime(f); }, 0);
       var dur = sl.code.duration ? +sl.code.duration : Math.max(9000, Math.min(codeT + fbT, 32000));
       return { dur: dur, reveal: sl.fbs.length ? Math.min(codeT, dur * 0.45) : dur };
@@ -277,14 +307,20 @@
       var c = sl.code;
       var html = '<div class="wt-step wt-pair' + (sl.fbs.length ? "" : " solo") + '">' +
         '<section class="wt-pc">' + head("code", "Step " + sl.no + " · Code", c.label) +
-        (c.text ? '<p class="wt-text">' + rich(c.text) + "</p>" : "") + codeBlock(c.code || "") + "</section>";
+        (c.text ? '<p class="wt-text">' + rich(c.text) + "</p>" : "");
+      var parts = splitSaw(c.code);
+      html += sawBox(parts.saw) + codeBlock(null, parts.lines) + "</section>";
       if (sl.fbs.length) {
         html += '<div class="wt-link" aria-hidden="true"><span class="wt-link-line"></span>' +
           '<span class="wt-link-tag">' + ICON.next + "output</span><span class=\"wt-link-line\"></span></div>" +
           '<section class="wt-pf"><p class="wt-wait">running…</p>' +
           sl.fbs.map(function (f) {
-            return '<div class="wt-fb">' + head("feedback", "Feedback", f.label) + fbBody(f, base) + "</div>";
+            return '<div class="wt-fb">' + head("feedback", "Check", f.label) +
+              (f.text ? '<p class="wt-text wt-callout">' + rich(f.text) + "</p>" : "") + kvBlock(f.kv) + "</div>";
           }).join("") + "</section>";
+        var media = [];
+        sl.fbs.forEach(function (f) { media = media.concat(f.media || []); });
+        if (media.length) html += '<section class="wt-pm">' + mediaGrid(media, base) + "</section>";
       }
       return html + "</div>";
     }
@@ -324,14 +360,14 @@
     });
     // wide images (BEV strips, sheets) take a full row once their size is known
     Array.prototype.forEach.call(this.screen.querySelectorAll(".wt-fig img"), function (img) {
-      var lim = img.closest(".wt-pf") ? 2.6 : 2.2;   // the narrower output column keeps 2.3:1 crops two-up
+      var lim = img.closest(".wt-pm") ? 2.6 : 2.2;   // under a code slide, 2.3:1 crops stay two-up
       function mark() { if (img.naturalWidth / Math.max(1, img.naturalHeight) > lim) img.closest(".wt-fig").classList.add("wide"); }
       if (img.complete) mark(); else img.addEventListener("load", mark);
     });
     this.pair = this.screen.querySelector(".wt-pair");
     this.pre = this.screen.querySelector(".wt-pc .wt-code");
     this.lines = Array.prototype.slice.call(this.screen.querySelectorAll(".wt-pc .wt-ln, .wt-is-code .wt-ln"));
-    this.typeEnd = Math.min(sl.t.reveal * 0.55, this.lines.length * 160);
+    this.typeEnd = Math.min(sl.t.reveal * 0.6, this.lines.length * 170);
     if (this.playing && !REDUCE) this.arm(); else this.revealAll();
     this.startVideos();
     this.preload(this.k + 1);
