@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611191730';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611191900';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -39,16 +39,6 @@ const SETS = {
   },
 
 
-  counterfactual: {
-    dir: 'videos/counterfactual',
-    tabs: [
-      { id: 'A_0331_npcloss003', label: 'Scene 1' },
-      { id: 'B_0330_npcloss006', label: 'Scene 2' },
-    ],
-    rows: [
-      [['condition', 'Blocks-World Condition'], ['ours', 'MemOIR (Ours)']],
-    ],
-  },
 
   'counterfactual-sim': {
     dir: 'videos/counterfactual',
@@ -432,7 +422,8 @@ function buildCompare(root) {
     if (group.playing) group.play();
   }
 
-  root.append(tabs, panels, bar);
+  if (set.tabs.length > 1) root.append(tabs);   // a single scene needs no tab
+  root.append(panels, bar);
 
   // Load the first tab only once the block scrolls near the viewport.
   let started = false;
