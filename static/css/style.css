@@ -586,3 +586,8 @@ footer .wrap { display: flex; justify-content: center; }
 .desc-gap { margin-top: 36px; }
 .note.footnote-note { margin: 12px 0 0; max-width: 92ch; padding: 0 0 0 12px; border-left: 2px solid var(--line-2); color: var(--muted); font-size: 13.5px; line-height: 1.55; }
 .note.footnote-note b { color: var(--ink-2); font-weight: 600; }
+
+/* plain section titles (user 11-19): smaller, no display styling */
+.sec-title { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.2; letter-spacing: -.015em; }
+.hero-title { font-size: clamp(26px, 3.2vw, 40px); line-height: 1.15; }
+#abstract .cols { margin-top: 32px; }

@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MemOIR</title>
+  <title>MemOIR: Blocks-Level Code World to Long-Horizon Video with Object-Level Memory</title>
   <meta name="description" content="MemOIR: driving video generation from a view-space blocks world with object-level memory. Real video to an editable code world, scenario editing, and long-horizon generation of photorealistic driving video.">
   <link rel="icon" type="image/svg+xml" href="static/images/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="static/css/style.css?v=202611191200">
+  <link rel="stylesheet" href="static/css/style.css?v=202611191500">
 </head>
 <body>
 
@@ -26,8 +26,7 @@
 
     <div class="hero-grid">
       <div class="hero-left">
-        <p class="wordmark"><img src="static/images/logo.svg" alt="" width="64" height="64">MemOIR</p>
-        <h1 class="hero-title">Driving Video Generation from View-Space Blocks World with Object-Level Memory</h1>
+        <h1 class="hero-title">MemOIR: Blocks-Level Code World to Long-Horizon Video with Object-Level Memory</h1>
 
         <p class="hero-thesis">
           <strong>Real video</strong> <span class="arr">→</span>
@@ -73,9 +72,9 @@
 <nav class="toc" aria-label="Sections">
   <div class="wrap">
     <a href="#abstract">Overview</a>
-    <a href="#real2sim">Real → Sim</a>
-    <a href="#manipulate">Manipulate</a>
-    <a href="#sim2real">Sim → Real</a>
+    <a href="#real2sim">Video → Code World</a>
+    <a href="#manipulate">Scenario Editing</a>
+    <a href="#sim2real">Long-Horizon Generation</a>
     <a href="#bibtex">BibTeX</a>
   </div>
 </nav>
@@ -86,11 +85,36 @@
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">01</span> Overview</p>
-        <h2 class="sec-title">Driving scenes as code, generated back as photorealistic video.</h2>
+        <h2 class="sec-title">Instance-Level Memory for Long-Horizon Driving Video</h2>
       </div>
       <p class="abstract">
         Video generative models promise driving simulators that can render arbitrary traffic scenarios, but this requires both precise control over the scene and consistency across long rollouts. Existing driving generators condition only on traffic participants and road layout, leaving the static world, and with it the ego motion, underspecified, while frame-level memories grow quickly and cannot tell which cached tokens belong to which instance. We present MemOIR, a driving video diffusion model conditioned on a view-space blocks-world representation that renders every dynamic and static instance as a 3D block encoding its class, identity, and occlusion, curated automatically from raw driving videos. This representation densely specifies both agent motion and the ego trajectory, and enables object-level KV caching: each instance's tokens are cached from its most complete observations and re-embedded where its block projects when it reappears, attending to far fewer tokens than frame-level caching. MemOIR achieves the most accurate instance placement and ego-motion control among driving generators with competitive visual quality, faithfully places vehicles performing unseen maneuvers such as spin-outs, and substantially improves the identity consistency of returning vehicles.
       </p>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <p class="card-k">(a) Cache</p>
+        <h4>Per-instance KV storage</h4>
+        <p>Keys and values are stored from each instance's most visible observations, together with box-local 3D coordinates.</p>
+      </div>
+      <div class="card">
+        <p class="card-k">(b) Re-embed</p>
+        <h4>Re-embedding on return</h4>
+        <p>When the instance reappears, its cached keys are re-embedded with rotary position where its block projects in the new frame.</p>
+      </div>
+      <div class="card is-ours">
+        <p class="card-k">(c) Attend</p>
+        <h4>Instance-aware attention</h4>
+        <p>An instance-aware attention mask lets each query read only the memory of the instance that owns it.</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div><b>45.6%</b><span>re-identification of returning vehicles, up from at most 11.0%</span></div>
+      <div><b>98.1%</b><span>of frames with the spin-out vehicle placed correctly</span></div>
+      <div><b>~24×</b><span>fewer memory tokens than frame-level caching</span></div>
+      <div><b>40%</b><span>higher ego trajectory error without static instances</span></div>
     </div>
 
     <!-- TODO: summary video of the whole project -->
@@ -99,21 +123,21 @@
     <ol class="steps">
       <li>
         <a href="#real2sim">
-          <span class="step-n">Part 1 · Real → Sim</span>
+          <span class="step-n">Part 1 · Video → Code World</span>
           <b>Reconstruct</b>
           <span>An LLM agent with off-the-shelf perception rebuilds a dashcam video as a 4D blocks world and exports it as one Python file.</span>
         </a>
       </li>
       <li>
         <a href="#manipulate">
-          <span class="step-n">Part 2 · Manipulate</span>
+          <span class="step-n">Part 2 · Scenario Editing</span>
           <b>Edit</b>
           <span>Change what every agent does in code: speed, stops, delays, lane changes, new or removed vehicles.</span>
         </a>
       </li>
       <li class="is-ours">
         <a href="#sim2real">
-          <span class="step-n">Part 3 · Sim → Real</span>
+          <span class="step-n">Part 3 · Long-Horizon Generation</span>
           <b>Render</b>
           <span>A blocks-world-conditioned video model with instance-level memory renders long, identity-consistent driving video.</span>
         </a>
@@ -127,8 +151,8 @@
   <div class="wrap">
     <div class="sec-head split">
       <div>
-        <p class="kicker"><span class="kn">02</span> Real → Sim</p>
-        <h2 class="sec-title">From dashcam video to a code blocks world.</h2>
+        <p class="kicker"><span class="kn">02</span> Video → Code World</p>
+        <h2 class="sec-title">Video to Code World via a Closed-Loop Agentic Pipeline</h2>
       </div>
       <p class="sec-lede">
         <strong>SceneClaw</strong> is a closed-loop LLM agent working in a stateful Python kernel. It uses only off-the-shelf models and code: <strong>nothing trained by us</strong>, and no ground-truth labels or poses at inference.
@@ -136,12 +160,12 @@
     </div>
 
     <!-- TODO: explanation video for part 1 -->
-    <div class="explainer" data-src="videos/explainer/01-real2sim.mp4" data-label="Explanation video · Real → Sim"></div>
+    <div class="explainer" data-src="videos/explainer/01-real2sim.mp4" data-label="Explanation video · Video → Code World"></div>
 
     <div class="cols">
       <div class="card">
         <p class="card-k">(a) Perceive</p>
-        <h4>Off-the-shelf tools</h4>
+        <h4>Off-the-shelf perception</h4>
         <ul>
           <li><b>Depth Anything 3</b> (multi-view): metric depth and camera poses estimated from the video</li>
           <li><b>Mask2Former</b> panoptic segmentation and <b>Mapillary Vistas</b> lane markings</li>
@@ -152,7 +176,7 @@
       </div>
       <div class="card">
         <p class="card-k">(b) Check</p>
-        <h4>Look, compare, repair</h4>
+        <h4>Overlay checks and repair</h4>
         <ul>
           <li>The agent compares its world against image overlays and a bird's-eye view at several scales, including far-range sky and road checks, and repairs what does not match.</li>
           <li>A final overlay check on the first, an intermediate and the last frame closes the loop.</li>
@@ -160,7 +184,7 @@
       </div>
       <div class="card is-ours">
         <p class="card-k">(c) Output</p>
-        <h4>One editable program</h4>
+        <h4>Editable Python scene file</h4>
         <ul>
           <li><b>Static world</b>: one aligned slab per building with street-side facade strips, walls, vegetation crowns, lane and road lines, poles, signs, and traffic lights with symbolic content.</li>
           <li><b>Agents</b> with one id, one size and a trajectory each, plus per-frame traffic-light states.</li>
@@ -190,8 +214,8 @@
   <div class="wrap">
     <div class="sec-head split">
       <div>
-        <p class="kicker"><span class="kn">03</span> Manipulate</p>
-        <h2 class="sec-title">Every scenario is a few lines of code.</h2>
+        <p class="kicker"><span class="kn">03</span> Scenario Editing</p>
+        <h2 class="sec-title">Controllable Code World for Scenario Generation</h2>
       </div>
       <p class="sec-lede">
         Each agent is a route with a timing table, and a <strong>chainable scenario API</strong> changes when and how it moves. Buildings, trees, lines and traffic lights are plain lists. The edited world renders through the same renderer and becomes the condition for Part 3.
@@ -199,7 +223,7 @@
     </div>
 
     <!-- TODO: explanation video for part 2 -->
-    <div class="explainer" data-src="videos/explainer/02-manipulate.mp4" data-label="Explanation video · Manipulate"></div>
+    <div class="explainer" data-src="videos/explainer/02-manipulate.mp4" data-label="Explanation video · Scenario Editing"></div>
 
     <div class="codeblock">
       <span class="codeblock-tag">scene_world.py · illustrative edit</span>
@@ -227,8 +251,8 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   <div class="wrap">
     <div class="sec-head split">
       <div>
-        <p class="kicker"><span class="kn">04</span> Sim → Real</p>
-        <h2 class="sec-title">Generating photorealistic video, with object-level memory.</h2>
+        <p class="kicker"><span class="kn">04</span> Long-Horizon Generation</p>
+        <h2 class="sec-title">Long-Horizon Video Generation with Instance-Level KV Memory</h2>
       </div>
       <p class="sec-lede">
         A ControlNet-style branch on a frozen <strong>Cosmos-Predict2.5-2B</strong> renders the blocks world chunk by chunk, each chunk re-anchored on the previous one's last frame. An <strong>instance-level KV bank</strong> keeps every vehicle consistent across chunks and after it leaves the view.
@@ -236,32 +260,8 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     </div>
 
     <!-- TODO: explanation video for part 3 -->
-    <div class="explainer" data-src="videos/explainer/03-sim2real.mp4" data-label="Explanation video · Sim → Real"></div>
+    <div class="explainer" data-src="videos/explainer/03-sim2real.mp4" data-label="Explanation video · Long-Horizon Generation"></div>
 
-    <div class="cols">
-      <div class="card">
-        <p class="card-k">(a) Cache</p>
-        <h4>Per instance</h4>
-        <p>Keys and values are stored from each instance's most visible observations, together with box-local 3D coordinates.</p>
-      </div>
-      <div class="card">
-        <p class="card-k">(b) Re-embed</p>
-        <h4>On return</h4>
-        <p>When the instance reappears, its cached keys are re-embedded with rotary position where its block projects in the new frame.</p>
-      </div>
-      <div class="card is-ours">
-        <p class="card-k">(c) Attend</p>
-        <h4>Only to its own</h4>
-        <p>An instance-aware attention mask lets each query read only the memory of the instance that owns it.</p>
-      </div>
-    </div>
-
-    <div class="stats">
-      <div><b>45.6%</b><span>re-identification of returning vehicles, up from at most 11.0%</span></div>
-      <div><b>98.1%</b><span>of frames with the spin-out vehicle placed correctly</span></div>
-      <div><b>~24×</b><span>fewer memory tokens than frame-level caching</span></div>
-      <div><b>40%</b><span>higher ego trajectory error without static instances</span></div>
-    </div>
 
     <h3 class="sub">Normal Driving Scenarios</h3>
     <p class="desc">15-second clips from the nuScenes validation set.</p>
@@ -271,10 +271,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <p class="desc">All methods receive the same real initial frame, except MemOIR (No Initial Frame), which generates from the blocks-world condition alone; 15.4 s generations (185 frames at 12 Hz).</p>
     <div class="compare" data-set="lyft-matched"></div>
     <p class="note footnote-note"><b>Frame rate.</b> Lyft L5 provides camera frames and 3D box annotations at 5 Hz. For all Lyft L5 videos on this page, we interpolate each instance's 3D box trajectory between its annotated keyframes to obtain smooth 12 Hz conditions, and every method generates 12 Hz video from them. The real video is shown at its native 5 Hz, with each frame held to match 12 Hz playback.</p>
-
-    <h3 class="sub" id="matched-over-time">Quality Over Time with Full-Chunk Fine-Tuning (Lyft L5)</h3>
-    <p class="desc">MemOIR fine-tuned on 25-frame clips and on longer 61-frame chunks, with matched frame counts.</p>
-    <div class="compare" data-set="lyft-fullchunk"></div>
 
     <h3 class="sub">Counterfactual Maneuvers</h3>
     <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers. MemOIR places the spinning vehicle correctly in <span class="mark">98.1% of frames</span>.</p>
@@ -311,14 +307,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <h3 class="sub">Ablation: Stationary Instances</h3>
     <p class="desc">nuScenes validation scenes generated with and without stationary instances (buildings and vegetation) in the blocks-world condition. For this ablation, both models are trained from scratch for only 1,000 iterations, so the overall video quality is subpar; still, the two settings differ clearly in the speed and movement of the camera.</p>
     <div class="compare" data-set="ablation-stationary"></div>
-
-    <h3 class="sub" id="robustness-noisy-box">Robustness: Noisy Box Conditioning</h3>
-    <p class="desc">One target vehicle per scene is perturbed in the conditioning canvas by location jitter (σ = 0.3 m per axis) or box dropout (30% of frames).</p>
-    <div class="compare" data-set="noisy-boxes"></div>
-
-    <h3 class="sub" id="robustness-id-switch">Robustness: Identity Switch within a Chunk</h3>
-    <p class="desc">The ego vehicle swerves until the target vehicle has almost left the frame; when it comes back, its box carries a new instance ID within the same chunk. The control keeps the original ID. While almost fully visible, the target is outlined in <span class="c1">blue</span> with its original ID and in <span class="c2">orange</span> with the new ID.</p>
-    <div class="compare" data-set="id-switch"></div>
   </div>
 </section>
 
@@ -346,6 +334,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611191200"></script>
+<script src="static/js/main.js?v=202611191500"></script>
 </body>
 </html>

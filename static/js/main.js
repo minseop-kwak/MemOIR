@@ -7,17 +7,10 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611191200';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611191500';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
-
-const BASELINES = [
-  ['trackdiffusion', 'TrackDiffusion'],
-  ['panacea', 'Panacea'],
-  ['dreamforge', 'DreamForge'],
-  ['magicdrive-v2', 'MagicDrive-V2'],
-];
 
 const SETS = {
   /* Part 1: SceneClaw reconstructions (input | blocks world | BEV | far BEV in one video). */
@@ -57,7 +50,6 @@ const SETS = {
     ],
     rows: [
       [['condition', 'Blocks-World Condition'], ['real', 'Real Video'], ['ours', 'MemOIR (Ours)']],
-      BASELINES,
     ],
   },
 
@@ -69,7 +61,6 @@ const SETS = {
     ],
     rows: [
       [['condition', 'Blocks-World Condition'], ['ours', 'MemOIR (Ours)']],
-      BASELINES,
     ],
   },
 
@@ -90,7 +81,6 @@ const SETS = {
     ],
     rows: [
       [['condition', 'Blocks-World Condition'], ['real', 'Real Video'], ['ours', 'MemOIR (Ours)']],
-      BASELINES,
     ],
   },
 
@@ -159,11 +149,6 @@ const SETS = {
       [['dreamforge', 'DreamForge'], ['magicdrive-v2', 'MagicDrive-V2'], ['ours', 'MemOIR (Ours)']],
     ],
   },
-  'lyft-fullchunk': {
-    dir: 'videos/lyft/full-chunk',
-    tabs: scenes(3),
-    rows: [[['real', 'Real Video'], ['short-ft', 'MemOIR (25-frame fine-tuning)'], ['ours', 'MemOIR (full-chunk fine-tuning)']]],
-  },
 
   /* Instance memory: revisits, pedestrians, faces */
   revisit: {
@@ -200,25 +185,6 @@ const SETS = {
       { id: 'scene-05', label: 'Scene 5', events: [{ t: 3.378, label: 'Chunk boundary' }] },
     ],
     rows: [[['condition', 'Condition (Pose)'], ['real', 'Real Video'], ['no-memory', 'Wan2.1-VACE (Naive)'], ['ours', 'With Instance Memory (Ours)']]],
-  },
-
-  /* Robustness */
-  'noisy-boxes': {
-    dir: 'videos/robustness/noisy-boxes',
-    tabs: scenes(5),
-    rows: [
-      [['condition', 'Clean Condition'], ['condition-jitter', 'Jittered Boxes (σ = 0.3 m)'], ['condition-dropout', 'Flickering Boxes (30% dropped)']],
-      [['ours', 'MemOIR · Clean'], ['ours-jitter', 'MemOIR · Jittered'], ['ours-dropout', 'MemOIR · Flickering']],
-    ],
-  },
-  'id-switch': {
-    dir: 'videos/robustness/id-switch',
-    tabs: [   // events: frame at which the target's box gets a new instance ID (12 fps)
-      { id: 'scene-01', label: 'Scene 1', events: [{ t: 3.333, label: 'ID change' }] },
-      { id: 'scene-02', label: 'Scene 2', events: [{ t: 3.333, label: 'ID change' }] },
-      { id: 'scene-03', label: 'Scene 3', events: [{ t: 3.167, label: 'ID change' }] },
-    ],
-    rows: [[['condition', 'Condition (Box ID Changes)'], ['control', 'MemOIR, Same ID (Control)'], ['ours', 'MemOIR, ID Changed (Ours)']]],
   },
 
   appearance: {
