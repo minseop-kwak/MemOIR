@@ -163,6 +163,9 @@
     this.nowCount = r.querySelector(".wt-now-count");
     this.playBtn = r.querySelector(".wt-play");
     var self = this;
+    ["wheel", "touchstart", "mousedown", "keydown"].forEach(function (ev) {
+      self.screen.addEventListener(ev, function () { self.userScrolled = true; }, { passive: true });
+    });
     this.playBtn.addEventListener("click", function () {
       if (self.playing) { self.userPaused = true; self.pause(); }
       else { self.userPaused = false; if (self.ended) self.show(0); self.play(); }
@@ -240,7 +243,7 @@
     var base = this.samples[this.si].base;
     var kind = st.type in KIND ? st.type : "feedback";
     var tag = kind === "code" ? "Step " + this.codeNo[j] + " · Code" : KIND[kind];
-    var html = '<div class="wt-step wt-' + kind + '">' +
+    var html = '<div class="wt-step wt-is-' + kind + '">' +
       '<div class="wt-step-h">' + ICON[kind] + '<span class="wt-step-k">' + esc(tag) + "</span>" +
       (st.label ? '<span class="wt-step-l">' + esc(st.label) + "</span>" : "") + "</div>";
     if (kind === "code") {
@@ -267,6 +270,7 @@
     this.stopVideos();
     this.screen.innerHTML = this.renderStep(st, this.k);
     this.screen.scrollTop = 0;
+    this.userScrolled = false;
     this.nowLabel.textContent = st.label || KIND[st.type] || "";
     this.nowCount.textContent = (this.k + 1) + " / " + steps.length;
     var self = this;
@@ -354,6 +358,13 @@
       var n = Math.ceil((this.elapsed / Math.max(1, this.typeEnd)) * this.lines.length);
       for (var i = 0; i < this.lines.length && i < n; i++) this.lines[i].classList.remove("hid");
       if (n >= this.lines.length) this.typing = false;
+    }
+    // a step taller than the screen scrolls down slowly in its second half (unless the reader scrolled)
+    var over = this.screen.scrollHeight - this.screen.clientHeight;
+    if (over > 4 && !this.userScrolled && !REDUCE) {
+      var p = (this.elapsed - dur * 0.4) / (dur * 0.45);
+      p = Math.max(0, Math.min(1, p));
+      this.screen.scrollTop = Math.round(p * p * (3 - 2 * p) * over);
     }
     if (this.elapsed >= dur) {
       if (this.k < this.steps().length - 1) { this.show(this.k + 1); }
