@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611191921';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611191940';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -20,10 +20,10 @@ const SETS = {
     native: true,
     tabs: [
       { id: 'waymo-arterial', label: 'Waymo · Arterial' },
-      { id: 'waymo-busstop', label: 'Waymo · Bus Stop' },
-      { id: 'waymo-phx-allway', label: 'Waymo · All-Way Stop' },
-      { id: 'waymo-phx-intersection', label: 'Waymo · Intersection' },
-      { id: 'waymo-sf-hill', label: 'Waymo · SF Hill' },
+      { id: 'waymo-busstop', label: 'Waymo · Night Boulevard' },
+      { id: 'waymo-phx-allway', label: 'Waymo · Parking Lot' },
+      { id: 'waymo-phx-intersection', label: 'Waymo · Night Intersection' },
+      { id: 'waymo-sf-hill', label: 'Waymo · SF Residential' },
       { id: 'av2-pittsburgh', label: 'AV2 · Pittsburgh' },
       { id: 'av2-miami', label: 'AV2 · Miami' },
       { id: 'av2-detroit', label: 'AV2 · Detroit' },
