@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611192008';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611192040';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -89,12 +89,6 @@ const SETS = {
   },
 
 
-  /* Overview: long-horizon generation with the instance-level memory */
-  'memory-overview': {
-    dir: 'videos/long-horizon',
-    tabs: [{ id: 'uturn-01', label: 'Scene 1' }],
-    rows: [[['condition', 'Blocks-World Condition'], ['ours', 'MemOIR (Ours)']]],
-  },
 
   /* Single image -> blocks world (Part 1) */
   'agent-refine': {
@@ -489,6 +483,13 @@ function buildExplainer(root) {
   v.tabIndex = -1;                                   // not focusable while the placeholder covers it
   v.setAttribute('aria-label', root.dataset.label || 'Video');
   v.addEventListener('loadedmetadata', () => { root.classList.add('is-loaded'); v.tabIndex = 0; }, { once: true });
+  if (root.dataset.autoplay) {                       // animations: muted loop, play only while on screen
+    v.muted = true;
+    v.loop = true;
+    v.preload = 'auto';
+    new IntersectionObserver(es => es.forEach(e => (e.isIntersecting ? v.play().catch(() => {}) : v.pause())),
+      { threshold: 0.35 }).observe(root);
+  }
   v.src = src;
   root.prepend(v);
 }
