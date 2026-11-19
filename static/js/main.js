@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611192000';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611192015';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -84,18 +84,6 @@ const SETS = {
     ],
   },
 
-  'ablation-stationary': {
-    dir: 'videos/ablation/stationary',
-    tabs: [
-      { id: 'scene-01', label: 'Scene 1' },
-      { id: 'scene-02', label: 'Scene 2' },
-      { id: 'scene-03', label: 'Scene 3' },
-    ],
-    rows: [
-      [['real', 'Real Video'], ['condition', 'Condition (With Stationary)'], ['condition-nostatic', 'Condition (w/o Stationary)']],
-      [['ours', 'With Stationary Instances'], ['ablated', 'w/o Stationary Instances']],
-    ],
-  },
 
   /* Overview: long-horizon generation with the instance-level memory */
   'memory-overview': {

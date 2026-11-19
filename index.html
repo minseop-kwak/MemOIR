@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="static/css/style.css?v=202611192000">
+  <link rel="stylesheet" href="static/css/style.css?v=202611192015">
 </head>
 <body>
 
@@ -244,14 +244,14 @@ scene.clone(<span class="s">"veh017"</span>, <span class="s">"veh900"</span>).de
 scene.remove(<span class="s">"ped045"</span>)                         <span class="c"># clear a pedestrian</span></code></pre>
     </div>
 
+    <h3 class="sub" id="matched-comparison">Video Generation from a Blocks World</h3>
+    <p class="desc">Driving video generated from the same blocks-world condition and real first frame, on a dataset not seen in training, by MemOIR and by prior driving video generators. MemOIR also generates from the condition alone, without the first frame.</p>
+    <div class="compare" data-set="lyft-matched"></div>
+    <p class="note footnote-note"><b>Frame rate.</b> The real video is recorded at 5 Hz and shown with frames held to match the 12 Hz generations.</p>
+
     <h3 class="sub">Code-World Edits</h3>
     <p class="desc">A driving scene is edited in code, and MemOIR generates the video of the edited scenario.</p>
     <div class="compare" data-set="codeworld-edit"></div>
-
-    <h3 class="sub" id="matched-comparison">Comparison with Driving Video Generators</h3>
-    <p class="desc">MemOIR and prior driving video generators under the same condition and initial frame, on a dataset not seen in training. MemOIR also generates from the blocks-world condition alone, without the initial frame.</p>
-    <div class="compare" data-set="lyft-matched"></div>
-    <p class="note footnote-note"><b>Frame rate.</b> The real video is recorded at 5 Hz and shown with frames held to match the 12 Hz generations.</p>
 
     <h3 class="sub">Simulated Scenarios with Text-Prompted Events</h3>
     <p class="desc">Scenarios authored in a simulator become blocks-world conditions, and a text prompt adds an event (here, engine smoke from one car) while the motion follows the condition.</p>
@@ -301,10 +301,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <h3 class="sub">Ablation: Instance-level KV Caching</h3>
     <p class="desc">The memory components added one at a time. The target vehicle (green box) must keep its appearance across generation chunks, or after leaving the view and returning.</p>
     <div class="compare" data-set="ablation-kv"></div>
-
-    <h3 class="sub">Ablation: Stationary Instances</h3>
-    <p class="desc">Without stationary instances (buildings, vegetation) in the condition, the speed and motion of the camera are no longer controlled. Both models are trained only briefly for this comparison, so overall quality is low.</p>
-    <div class="compare" data-set="ablation-stationary"></div>
   </div>
 </section>
 
@@ -332,6 +328,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611192000"></script>
+<script src="static/js/main.js?v=202611192015"></script>
 </body>
 </html>
