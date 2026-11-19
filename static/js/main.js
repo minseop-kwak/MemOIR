@@ -93,12 +93,6 @@ const SETS = {
   },
 
   /* Single image -> blocks world (Part 1) */
-  'single-image': {
-    dir: 'videos/single-image/automatic',
-    aspect: '16 / 9',
-    tabs: scenes(3),
-    rows: [[['construction', 'Automatic Construction from a Single Image']]],
-  },
   'agent-refine': {
     dir: 'videos/single-image/agent',
     aspect: '16 / 9',

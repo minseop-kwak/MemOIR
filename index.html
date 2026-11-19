@@ -201,12 +201,8 @@
     <p class="desc">The input video, the reconstructed blocks world, and bird's-eye views at near and far range.</p>
     <div class="compare" data-set="sceneclaw"></div>
 
-    <h3 class="sub" id="single-image-auto">Single-image to Blocks-world Construction Pipeline (No GT utilized)</h3>
-    <p class="desc">The blocks world built step by step from one image, with off-the-shelf models only and no annotations, maps or LiDAR.</p>
-    <div class="compare" data-set="single-image"></div>
-
     <h3 class="sub" id="single-image-agent">LLM-Agent Refinement from a Single Image</h3>
-    <p class="desc">An LLM agent refines the automatically built world with the same off-the-shelf tools and extends it beyond the field of view of the image.</p>
+    <p class="desc">From a single image, an LLM agent refines an automatically built blocks world with off-the-shelf tools and extends it beyond the field of view of the image.</p>
     <div class="compare" data-set="agent-refine"></div>
     <p class="desc desc-gap">MemOIR drives through the refined world, starting from the input image.</p>
     <div class="compare" data-set="agent-drive"></div>
@@ -276,7 +272,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
       <div class="img-slot" data-src="static/images/memory_figure.png" data-label="Instance-level KV memory"></div>
       <figcaption>Each instance's tokens are cached in a per-ID token bank, warped to where its block projects in the target frame, re-embedded with target-coordinate RoPE, and aggregated into spatial self-attention.</figcaption>
     </figure>
-
 
     <h3 class="sub">Long-Horizon Instance Consistency</h3>
     <p class="desc">A target vehicle (green box) leaves the view and returns with the same appearance.</p>
