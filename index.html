@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="static/css/style.css?v=202611191500">
+  <link rel="stylesheet" href="static/css/style.css?v=202611191730">
 </head>
 <body>
 
@@ -73,7 +73,7 @@
   <div class="wrap">
     <a href="#abstract">Overview</a>
     <a href="#real2sim">Video → Code World</a>
-    <a href="#manipulate">Scenario Editing</a>
+    <a href="#manipulate">Controllable Generation</a>
     <a href="#sim2real">Long-Horizon Generation</a>
     <a href="#bibtex">BibTeX</a>
   </div>
@@ -87,10 +87,49 @@
         <p class="kicker"><span class="kn">01</span> Overview</p>
         <h2 class="sec-title">Instance-Level Memory for Long-Horizon Driving Video</h2>
       </div>
-      <p class="abstract">
-        Video generative models promise driving simulators that can render arbitrary traffic scenarios, but this requires both precise control over the scene and consistency across long rollouts. Existing driving generators condition only on traffic participants and road layout, leaving the static world, and with it the ego motion, underspecified, while frame-level memories grow quickly and cannot tell which cached tokens belong to which instance. We present MemOIR, a driving video diffusion model conditioned on a view-space blocks-world representation that renders every dynamic and static instance as a 3D block encoding its class, identity, and occlusion, curated automatically from raw driving videos. This representation densely specifies both agent motion and the ego trajectory, and enables object-level KV caching: each instance's tokens are cached from its most complete observations and re-embedded where its block projects when it reappears, attending to far fewer tokens than frame-level caching. MemOIR achieves the most accurate instance placement and ego-motion control among driving generators with competitive visual quality, faithfully places vehicles performing unseen maneuvers such as spin-outs, and substantially improves the identity consistency of returning vehicles.
+      <p class="sec-lede">
+        MemOIR converts a driving video into an editable <strong>code world</strong> with a closed-loop agent that uses only <strong>off-the-shelf</strong> models, then renders it back as photorealistic video. An <strong>instance-level KV memory</strong> caches each object's tokens and re-embeds them where its block reappears, keeping identities consistent over long horizons.
       </p>
     </div>
+
+    <!-- TODO: summary video of the whole project -->
+    <div class="explainer summary" data-src="videos/explainer/00-summary.mp4" data-label="Summary video · MemOIR end to end"></div>
+
+    <ol class="steps">
+      <li>
+        <a href="#real2sim">
+          <span class="step-n">02 · Video → Code World</span>
+          <b>Reconstruct</b>
+          <span>An LLM agent with off-the-shelf perception rebuilds a dashcam video as a 4D blocks world and exports it as one Python file.</span>
+        </a>
+      </li>
+      <li>
+        <a href="#manipulate">
+          <span class="step-n">03 · Controllable Generation</span>
+          <b>Edit</b>
+          <span>Change what every agent does in code: speed, stops, delays, lane changes, new or removed vehicles.</span>
+        </a>
+      </li>
+      <li>
+        <a href="#sim2real">
+          <span class="step-n">04 · Long-Horizon Generation</span>
+          <b>Render</b>
+          <span>A blocks-world-conditioned video model with instance-level memory renders long, identity-consistent driving video.</span>
+        </a>
+      </li>
+    </ol>
+
+    <div class="stats">
+      <div><b>45.6%</b><span>re-identification of returning vehicles, up from at most 11.0%</span></div>
+      <div><b>98.1%</b><span>of frames with the spin-out vehicle placed correctly</span></div>
+      <div><b>~24×</b><span>fewer memory tokens than frame-level caching</span></div>
+      <div><b>40%</b><span>higher ego trajectory error without static instances</span></div>
+    </div>
+
+    <h3 class="sub" id="overview-memory">Memory-Based Long-Horizon Generation</h3>
+    <p class="desc">A long rollout generated with the instance-level KV memory; each vehicle keeps its appearance when it returns to the view.</p>
+    <!-- TODO: long-horizon generation with instance-level memory -->
+    <div class="explainer" data-src="videos/explainer/00-memory.mp4" data-label="Long-horizon video · Instance-level memory"></div>
 
     <div class="cols">
       <div class="card">
@@ -103,46 +142,13 @@
         <h4>Re-embedding on return</h4>
         <p>When the instance reappears, its cached keys are re-embedded with rotary position where its block projects in the new frame.</p>
       </div>
-      <div class="card is-ours">
+      <div class="card">
         <p class="card-k">(c) Attend</p>
         <h4>Instance-aware attention</h4>
         <p>An instance-aware attention mask lets each query read only the memory of the instance that owns it.</p>
       </div>
     </div>
 
-    <div class="stats">
-      <div><b>45.6%</b><span>re-identification of returning vehicles, up from at most 11.0%</span></div>
-      <div><b>98.1%</b><span>of frames with the spin-out vehicle placed correctly</span></div>
-      <div><b>~24×</b><span>fewer memory tokens than frame-level caching</span></div>
-      <div><b>40%</b><span>higher ego trajectory error without static instances</span></div>
-    </div>
-
-    <!-- TODO: summary video of the whole project -->
-    <div class="explainer summary" data-src="videos/explainer/00-summary.mp4" data-label="Summary video · MemOIR end to end"></div>
-
-    <ol class="steps">
-      <li>
-        <a href="#real2sim">
-          <span class="step-n">Part 1 · Video → Code World</span>
-          <b>Reconstruct</b>
-          <span>An LLM agent with off-the-shelf perception rebuilds a dashcam video as a 4D blocks world and exports it as one Python file.</span>
-        </a>
-      </li>
-      <li>
-        <a href="#manipulate">
-          <span class="step-n">Part 2 · Scenario Editing</span>
-          <b>Edit</b>
-          <span>Change what every agent does in code: speed, stops, delays, lane changes, new or removed vehicles.</span>
-        </a>
-      </li>
-      <li class="is-ours">
-        <a href="#sim2real">
-          <span class="step-n">Part 3 · Long-Horizon Generation</span>
-          <b>Render</b>
-          <span>A blocks-world-conditioned video model with instance-level memory renders long, identity-consistent driving video.</span>
-        </a>
-      </li>
-    </ol>
   </div>
 </section>
 
@@ -214,16 +220,16 @@
   <div class="wrap">
     <div class="sec-head split">
       <div>
-        <p class="kicker"><span class="kn">03</span> Scenario Editing</p>
-        <h2 class="sec-title">Controllable Code World for Scenario Generation</h2>
+        <p class="kicker"><span class="kn">03</span> Controllable Generation</p>
+        <h2 class="sec-title">Controllable Video Generation by Editing the Code World</h2>
       </div>
       <p class="sec-lede">
-        Each agent is a route with a timing table, and a <strong>chainable scenario API</strong> changes when and how it moves. Buildings, trees, lines and traffic lights are plain lists. The edited world renders through the same renderer and becomes the condition for Part 3.
+        Each agent is a route with a timing table, and a <strong>chainable scenario API</strong> changes when and how it moves. Buildings, trees, lines and traffic lights are plain lists. The edited world renders through the same renderer into the blocks-world condition, so each edit becomes a controlled change in the generated video.
       </p>
     </div>
 
     <!-- TODO: explanation video for part 2 -->
-    <div class="explainer" data-src="videos/explainer/02-manipulate.mp4" data-label="Explanation video · Scenario Editing"></div>
+    <div class="explainer" data-src="videos/explainer/02-manipulate.mp4" data-label="Explanation video · Controllable Generation"></div>
 
     <div class="codeblock">
       <span class="codeblock-tag">scene_world.py · illustrative edit</span>
@@ -243,6 +249,14 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <h3 class="sub">Code-World Edits</h3>
     <p class="desc">The original reconstruction, the edited blocks world, and the generated video.</p>
     <div class="compare" data-set="codeworld-edit"></div>
+
+    <h3 class="sub">Counterfactual Maneuvers</h3>
+    <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers. MemOIR places the spinning vehicle correctly in <span class="mark">98.1% of frames</span>.</p>
+    <div class="compare" data-set="counterfactual"></div>
+
+    <h3 class="sub">Simulated Scenarios with Text-Prompted Events</h3>
+    <p class="desc">CARLA highway scenarios (a car cutting in ahead; a car beside the ego losing control) converted to blocks-world conditions; the text prompt makes that car pour engine smoke as it drives.</p>
+    <div class="compare" data-set="counterfactual-sim"></div>
   </div>
 </section>
 
@@ -263,22 +277,10 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <div class="explainer" data-src="videos/explainer/03-sim2real.mp4" data-label="Explanation video · Long-Horizon Generation"></div>
 
 
-    <h3 class="sub">Normal Driving Scenarios</h3>
-    <p class="desc">15-second clips from the nuScenes validation set.</p>
-    <div class="compare" data-set="normal"></div>
-
-    <h3 class="sub" id="matched-comparison">Zero-Shot Comparison on Lyft L5 with Matched Inputs</h3>
-    <p class="desc">All methods receive the same real initial frame, except MemOIR (No Initial Frame), which generates from the blocks-world condition alone; 15.4 s generations (185 frames at 12 Hz).</p>
+    <h3 class="sub" id="matched-comparison">Comparison with Driving Video Generators</h3>
+    <p class="desc">Zero-shot generation on Lyft L5, a dataset unseen in training. All methods receive the same real initial frame, except MemOIR (No Initial Frame), which generates from the blocks-world condition alone; 15.4 s generations (185 frames at 12 Hz).</p>
     <div class="compare" data-set="lyft-matched"></div>
     <p class="note footnote-note"><b>Frame rate.</b> Lyft L5 provides camera frames and 3D box annotations at 5 Hz. For all Lyft L5 videos on this page, we interpolate each instance's 3D box trajectory between its annotated keyframes to obtain smooth 12 Hz conditions, and every method generates 12 Hz video from them. The real video is shown at its native 5 Hz, with each frame held to match 12 Hz playback.</p>
-
-    <h3 class="sub">Counterfactual Maneuvers</h3>
-    <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers. MemOIR places the spinning vehicle correctly in <span class="mark">98.1% of frames</span>.</p>
-    <div class="compare" data-set="counterfactual"></div>
-
-    <h3 class="sub">Simulated Scenarios with Text-Prompted Events</h3>
-    <p class="desc">CARLA highway scenarios (a car cutting in ahead; a car beside the ego losing control) converted to blocks-world conditions; the text prompt makes that car pour engine smoke as it drives.</p>
-    <div class="compare" data-set="counterfactual-sim"></div>
 
     <h3 class="sub">Long-Horizon Instance Consistency</h3>
     <p class="desc">Held-out nuPlan clips in which a target vehicle (green box) leaves the view and later returns.</p>
@@ -334,6 +336,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611191500"></script>
+<script src="static/js/main.js?v=202611191730"></script>
 </body>
 </html>

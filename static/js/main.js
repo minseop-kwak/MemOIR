@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611191500';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611191730';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -38,20 +38,6 @@ const SETS = {
     rows: [[['before', 'Original Blocks World'], ['after', 'Edited Blocks World'], ['ours', 'MemOIR (Ours)']]],
   },
 
-  normal: {
-    dir: 'videos/normal',
-    tabs: [
-      { id: 'scene-0634', label: 'Scene 1' },
-      { id: 'scene-0905', label: 'Scene 2' },
-      { id: 'scene-0094', label: 'Scene 3' },
-      { id: 'scene-0107', label: 'Scene 4' },
-      { id: 'scene-0914', label: 'Scene 5' },
-      { id: 'scene-0795', label: 'Scene 6' },
-    ],
-    rows: [
-      [['condition', 'Blocks-World Condition'], ['real', 'Real Video'], ['ours', 'MemOIR (Ours)']],
-    ],
-  },
 
   counterfactual: {
     dir: 'videos/counterfactual',
@@ -516,7 +502,9 @@ function buildExplainer(root) {
   v.controls = true;
   v.playsInline = true;
   v.preload = 'metadata';
-  v.addEventListener('loadedmetadata', () => root.classList.add('is-loaded'), { once: true });
+  v.tabIndex = -1;                                   // not focusable while the placeholder covers it
+  v.setAttribute('aria-label', root.dataset.label || 'Video');
+  v.addEventListener('loadedmetadata', () => { root.classList.add('is-loaded'); v.tabIndex = 0; }, { once: true });
   v.src = src;
   root.prepend(v);
 }
