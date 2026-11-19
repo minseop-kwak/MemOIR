@@ -8,8 +8,8 @@
   <link rel="icon" type="image/svg+xml" href="static/images/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="static/css/style.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="static/css/style.css?v=202611191200">
 </head>
 <body>
 
@@ -86,7 +86,7 @@
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">01</span> Overview</p>
-        <h2 class="sec-title">Driving scenes as code, generated back as <em>photorealistic video</em>.</h2>
+        <h2 class="sec-title">Driving scenes as code, generated back as photorealistic video.</h2>
       </div>
       <p class="abstract">
         Video generative models promise driving simulators that can render arbitrary traffic scenarios, but this requires both precise control over the scene and consistency across long rollouts. Existing driving generators condition only on traffic participants and road layout, leaving the static world, and with it the ego motion, underspecified, while frame-level memories grow quickly and cannot tell which cached tokens belong to which instance. We present MemOIR, a driving video diffusion model conditioned on a view-space blocks-world representation that renders every dynamic and static instance as a 3D block encoding its class, identity, and occlusion, curated automatically from raw driving videos. This representation densely specifies both agent motion and the ego trajectory, and enables object-level KV caching: each instance's tokens are cached from its most complete observations and re-embedded where its block projects when it reappears, attending to far fewer tokens than frame-level caching. MemOIR achieves the most accurate instance placement and ego-motion control among driving generators with competitive visual quality, faithfully places vehicles performing unseen maneuvers such as spin-outs, and substantially improves the identity consistency of returning vehicles.
@@ -128,7 +128,7 @@
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">02</span> Real → Sim</p>
-        <h2 class="sec-title">From dashcam video to a <em>code</em> blocks world.</h2>
+        <h2 class="sec-title">From dashcam video to a code blocks world.</h2>
       </div>
       <p class="sec-lede">
         <strong>SceneClaw</strong> is a closed-loop LLM agent working in a stateful Python kernel. It uses only off-the-shelf models and code: <strong>nothing trained by us</strong>, and no ground-truth labels or poses at inference.
@@ -172,6 +172,16 @@
     <h3 class="sub">Reconstructions</h3>
     <p class="desc">Input camera, reconstructed blocks world, and bird's-eye views at near and far range, on Waymo Open and Argoverse 2 clips.</p>
     <div class="compare" data-set="sceneclaw"></div>
+
+    <h3 class="sub" id="single-image-auto">Single-image to Blocks-world Construction Pipeline (No GT utilized)</h3>
+    <p class="desc">Step-by-step construction of the blocks world from a single image and its camera intrinsics; off-the-shelf models only, without annotations, maps or LiDAR.</p>
+    <div class="compare" data-set="single-image"></div>
+
+    <h3 class="sub" id="single-image-agent">LLM-Agent Refinement from a Single Image</h3>
+    <p class="desc">Closed-loop refinement of the automatically constructed blocks world (Scene 1 above) by an LLM agent that calls the same off-the-shelf tools; it then extends the world beyond the field of view of the image.</p>
+    <div class="compare" data-set="agent-refine"></div>
+    <p class="desc desc-gap">Generation from the initial image along a drive through the refined blocks world.</p>
+    <div class="compare" data-set="agent-drive"></div>
   </div>
 </section>
 
@@ -181,7 +191,7 @@
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">03</span> Manipulate</p>
-        <h2 class="sec-title">Every scenario is a <em>few lines</em> of code.</h2>
+        <h2 class="sec-title">Every scenario is a few lines of code.</h2>
       </div>
       <p class="sec-lede">
         Each agent is a route with a timing table, and a <strong>chainable scenario API</strong> changes when and how it moves. Buildings, trees, lines and traffic lights are plain lists. The edited world renders through the same renderer and becomes the condition for Part 3.
@@ -218,7 +228,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">04</span> Sim → Real</p>
-        <h2 class="sec-title">Generating photorealistic video, with <em>object-level</em> memory.</h2>
+        <h2 class="sec-title">Generating photorealistic video, with object-level memory.</h2>
       </div>
       <p class="sec-lede">
         A ControlNet-style branch on a frozen <strong>Cosmos-Predict2.5-2B</strong> renders the blocks world chunk by chunk, each chunk re-anchored on the previous one's last frame. An <strong>instance-level KV bank</strong> keeps every vehicle consistent across chunks and after it leaves the view.
@@ -257,6 +267,15 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <p class="desc">15-second clips from the nuScenes validation set.</p>
     <div class="compare" data-set="normal"></div>
 
+    <h3 class="sub" id="matched-comparison">Zero-Shot Comparison on Lyft L5 with Matched Inputs</h3>
+    <p class="desc">All methods receive the same real initial frame, except MemOIR (No Initial Frame), which generates from the blocks-world condition alone; 15.4 s generations (185 frames at 12 Hz).</p>
+    <div class="compare" data-set="lyft-matched"></div>
+    <p class="note footnote-note"><b>Frame rate.</b> Lyft L5 provides camera frames and 3D box annotations at 5 Hz. For all Lyft L5 videos on this page, we interpolate each instance's 3D box trajectory between its annotated keyframes to obtain smooth 12 Hz conditions, and every method generates 12 Hz video from them. The real video is shown at its native 5 Hz, with each frame held to match 12 Hz playback.</p>
+
+    <h3 class="sub" id="matched-over-time">Quality Over Time with Full-Chunk Fine-Tuning (Lyft L5)</h3>
+    <p class="desc">MemOIR fine-tuned on 25-frame clips and on longer 61-frame chunks, with matched frame counts.</p>
+    <div class="compare" data-set="lyft-fullchunk"></div>
+
     <h3 class="sub">Counterfactual Maneuvers</h3>
     <p class="desc">nuScenes validation scenes edited with CARLA vehicle control-loss maneuvers. MemOIR places the spinning vehicle correctly in <span class="mark">98.1% of frames</span>.</p>
     <div class="compare" data-set="counterfactual"></div>
@@ -273,6 +292,18 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <p class="desc">55-second generations on held-out nuPlan test scenes. After about 20 s of real driving, the ego vehicle makes a U-turn and drives back along the same street in the opposite lane, so the buildings and parked cars passed on the way out are seen again from the other side. Every method starts from the same initial frame; MAGI-1 receives the same text caption and Epona the same ego trajectory.</p>
     <div class="compare" data-set="long-horizon"></div>
 
+    <h3 class="sub" id="consistency-revisit">Forward–Reverse Revisit Consistency</h3>
+    <p class="desc">Lyft L5 (Scenes 1 and 4) and Argoverse 2 (Scenes 2–3). The first chunk drives forward; the second replays the ego and instance trajectories in reverse, so every instance is revisited. In Scenes 1–3, revisited instances are outlined in <span class="c1">blue</span> on the way out and in <span class="c2">orange</span> on the way back.</p>
+    <div class="compare" data-set="revisit"></div>
+
+    <h3 class="sub" id="consistency-pedestrian">Pedestrian Identity after Re-entering the Frame (WalkingTours, Wan2.1-VACE)</h3>
+    <p class="desc">Instance memory on another backbone. The chunk boundary is placed while the target person is out of view; markers on the timeline show the chunk boundary and the return. While fully visible, the target person is outlined in <span class="c1">blue</span> in chunk 1 and in <span class="c2">orange</span> in chunk 2.</p>
+    <div class="compare" data-set="wan-pedestrians"></div>
+
+    <h3 class="sub" id="consistency-face">Face Identity after a Turn-Away (CelebV-HQ, Wan2.1-VACE)</h3>
+    <p class="desc">The chunk boundary is placed mid-turn, when only the profile or the back of the head is visible.</p>
+    <div class="compare" data-set="wan-faces"></div>
+
     <h3 class="sub">Ablation: Instance-level KV Caching</h3>
     <p class="desc">Held-out Argoverse 2 and nuPlan clips generated as the memory components are added one at a time. The target vehicle (green box) must keep its appearance across generation chunks (Scene 1) or after leaving the view and returning (Scene 2).</p>
     <div class="compare" data-set="ablation-kv"></div>
@@ -280,6 +311,14 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <h3 class="sub">Ablation: Stationary Instances</h3>
     <p class="desc">nuScenes validation scenes generated with and without stationary instances (buildings and vegetation) in the blocks-world condition. For this ablation, both models are trained from scratch for only 1,000 iterations, so the overall video quality is subpar; still, the two settings differ clearly in the speed and movement of the camera.</p>
     <div class="compare" data-set="ablation-stationary"></div>
+
+    <h3 class="sub" id="robustness-noisy-box">Robustness: Noisy Box Conditioning</h3>
+    <p class="desc">One target vehicle per scene is perturbed in the conditioning canvas by location jitter (σ = 0.3 m per axis) or box dropout (30% of frames).</p>
+    <div class="compare" data-set="noisy-boxes"></div>
+
+    <h3 class="sub" id="robustness-id-switch">Robustness: Identity Switch within a Chunk</h3>
+    <p class="desc">The ego vehicle swerves until the target vehicle has almost left the frame; when it comes back, its box carries a new instance ID within the same chunk. The control keeps the original ID. While almost fully visible, the target is outlined in <span class="c1">blue</span> with its original ID and in <span class="c2">orange</span> with the new ID.</p>
+    <div class="compare" data-set="id-switch"></div>
   </div>
 </section>
 
@@ -307,6 +346,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js"></script>
+<script src="static/js/main.js?v=202611191200"></script>
 </body>
 </html>

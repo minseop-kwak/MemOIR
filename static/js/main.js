@@ -7,6 +7,11 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
+const MEDIA_V = '202611191200';   // appended to every video URL so a browser never shows a stale cached file
+
+const scenes = (n, prefix = 'scene') =>
+  Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
+
 const BASELINES = [
   ['trackdiffusion', 'TrackDiffusion'],
   ['panacea', 'Panacea'],
@@ -124,6 +129,96 @@ const SETS = {
       [['real', 'Real Video'], ['condition', 'Condition (With Stationary)'], ['condition-nostatic', 'Condition (w/o Stationary)']],
       [['ours', 'With Stationary Instances'], ['ablated', 'w/o Stationary Instances']],
     ],
+  },
+
+  /* Single image -> blocks world (Part 1) */
+  'single-image': {
+    dir: 'videos/single-image/automatic',
+    aspect: '16 / 9',
+    tabs: scenes(3),
+    rows: [[['construction', 'Automatic Construction from a Single Image']]],
+  },
+  'agent-refine': {
+    dir: 'videos/single-image/agent',
+    aspect: '16 / 9',
+    tabs: scenes(1),
+    rows: [[['construction', 'LLM-Agent Refinement from a Single Image']]],
+  },
+  'agent-drive': {
+    dir: 'videos/single-image/agent-drive',
+    tabs: scenes(1),
+    rows: [[['condition', 'Blocks-World Condition'], ['ours', 'MemOIR (Ours)']]],
+  },
+
+  /* Zero-shot Lyft L5 */
+  'lyft-matched': {
+    dir: 'videos/lyft/matched',
+    tabs: scenes(8),
+    rows: [
+      [['condition', 'Blocks-World Condition'], ['real', 'Real Video'], ['ours-noff', 'MemOIR (Ours, No Initial Frame)']],
+      [['dreamforge', 'DreamForge'], ['magicdrive-v2', 'MagicDrive-V2'], ['ours', 'MemOIR (Ours)']],
+    ],
+  },
+  'lyft-fullchunk': {
+    dir: 'videos/lyft/full-chunk',
+    tabs: scenes(3),
+    rows: [[['real', 'Real Video'], ['short-ft', 'MemOIR (25-frame fine-tuning)'], ['ours', 'MemOIR (full-chunk fine-tuning)']]],
+  },
+
+  /* Instance memory: revisits, pedestrians, faces */
+  revisit: {
+    dir: 'videos/consistency/revisit',
+    tabs: [   // events: start of the reverse replay (frame 93) at each clip's native fps
+      { id: 'scene-01', label: 'Scene 1', events: [{ t: 7.75, label: 'Reverse' }] },
+      { id: 'scene-02', label: 'Scene 2', events: [{ t: 9.3, label: 'Reverse' }] },
+      { id: 'scene-03', label: 'Scene 3', events: [{ t: 9.3, label: 'Reverse' }] },
+      { id: 'scene-04', label: 'Scene 4', events: [{ t: 7.75, label: 'Reverse' }] },
+    ],
+    rows: [[['real', 'Real Video'], ['no-memory', 'No Memory'], ['ours', 'With Instance Memory (Ours)']]],
+  },
+  'wan-pedestrians': {
+    dir: 'videos/consistency/walkingtours',
+    aspect: '53 / 30',
+    tabs: [   // events: chunk boundary (target out of view) and the target's return (15 fps timeline)
+      { id: 'scene-01', label: 'Scene 1', events: [{ t: 4.067, label: 'Chunk boundary' }, { t: 6.6, label: 'Return' }] },
+      { id: 'scene-02', label: 'Scene 2', events: [{ t: 3.067, label: 'Chunk boundary' }, { t: 4.2, label: 'Return' }] },
+      { id: 'scene-03', label: 'Scene 3', events: [{ t: 3.267, label: 'Chunk boundary' }, { t: 7.867, label: 'Return' }] },
+    ],
+    rows: [
+      [['condition', 'Condition (Depth)'], ['real', 'Real Video']],
+      [['no-memory', 'Wan2.1-VACE (No Memory)'], ['ours', 'With Instance Memory (Ours)']],
+    ],
+  },
+  'wan-faces': {
+    dir: 'videos/consistency/faces',
+    aspect: '64 / 61',
+    tabs: [   // events: chunk 2 starts at frame 81 (native fps)
+      { id: 'scene-01', label: 'Scene 1', events: [{ t: 3.24, label: 'Chunk boundary' }] },
+      { id: 'scene-02', label: 'Scene 2', events: [{ t: 3.378, label: 'Chunk boundary' }] },
+      { id: 'scene-03', label: 'Scene 3', events: [{ t: 1.35, label: 'Chunk boundary' }] },
+      { id: 'scene-04', label: 'Scene 4', events: [{ t: 2.703, label: 'Chunk boundary' }] },
+      { id: 'scene-05', label: 'Scene 5', events: [{ t: 3.378, label: 'Chunk boundary' }] },
+    ],
+    rows: [[['condition', 'Condition (Pose)'], ['real', 'Real Video'], ['no-memory', 'Wan2.1-VACE (Naive)'], ['ours', 'With Instance Memory (Ours)']]],
+  },
+
+  /* Robustness */
+  'noisy-boxes': {
+    dir: 'videos/robustness/noisy-boxes',
+    tabs: scenes(5),
+    rows: [
+      [['condition', 'Clean Condition'], ['condition-jitter', 'Jittered Boxes (σ = 0.3 m)'], ['condition-dropout', 'Flickering Boxes (30% dropped)']],
+      [['ours', 'MemOIR · Clean'], ['ours-jitter', 'MemOIR · Jittered'], ['ours-dropout', 'MemOIR · Flickering']],
+    ],
+  },
+  'id-switch': {
+    dir: 'videos/robustness/id-switch',
+    tabs: [   // events: frame at which the target's box gets a new instance ID (12 fps)
+      { id: 'scene-01', label: 'Scene 1', events: [{ t: 3.333, label: 'ID change' }] },
+      { id: 'scene-02', label: 'Scene 2', events: [{ t: 3.333, label: 'ID change' }] },
+      { id: 'scene-03', label: 'Scene 3', events: [{ t: 3.167, label: 'ID change' }] },
+    ],
+    rows: [[['condition', 'Condition (Box ID Changes)'], ['control', 'MemOIR, Same ID (Control)'], ['ours', 'MemOIR, ID Changed (Ours)']]],
   },
 
   appearance: {
@@ -345,8 +440,8 @@ function buildCompare(root) {
       const r = el('div', 'grid-row');
       r.style.setProperty('--n', row.length);
       for (const [key, label] of row) {
-        const fig = el('figure', 'slot' + (key === 'ours' ? ' is-ours' : ''));
-        const src = `${set.dir}/${tab.id}/${key}.mp4`;
+        const fig = el('figure', 'slot' + (key.startsWith('ours') ? ' is-ours' : ''));
+        const src = `${set.dir}/${tab.id}/${key}.mp4?v=${MEDIA_V}`;
         fig.dataset.src = src;
         const media = el('div', 'slot-media');
         media.append(placeholder(label, src));

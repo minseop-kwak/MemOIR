@@ -242,13 +242,7 @@ code { font-family: var(--font-mono); font-size: .86em; }
   letter-spacing: -.03em;
   text-wrap: balance;
 }
-.sec-title em {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 500;
-  letter-spacing: -.01em;
-  color: var(--accent-ink);
-}
+.sec-title em { font: inherit; color: inherit; }   /* titles stay plain black (no italic accent) */
 #bibtex .sec-title { margin-bottom: 24px; }
 
 .sec-lede { margin: 0; color: var(--ink-2); font-size: clamp(16px, 1.4vw, 19px); line-height: 1.55; }
@@ -585,3 +579,10 @@ footer .wrap { display: flex; justify-content: center; }
 .author-list sup .fn { margin-left: 1px; }
 .footnote { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 .footnote sup { color: var(--accent-ink); font-weight: 600; margin-right: 2px; }
+
+/* ---------- merged results (blue / orange outline legend, footnotes) ---------- */
+.desc .c1 { color: #2f7fe0; font-weight: 600; }
+.desc .c2 { color: #d9761a; font-weight: 600; }
+.desc-gap { margin-top: 36px; }
+.note.footnote-note { margin: 12px 0 0; max-width: 92ch; padding: 0 0 0 12px; border-left: 2px solid var(--line-2); color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+.note.footnote-note b { color: var(--ink-2); font-weight: 600; }
