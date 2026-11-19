@@ -562,3 +562,8 @@ footer .wrap { display: flex; justify-content: center; }
 /* review fixes (11-19) */
 .stats span { display: block; line-height: 1.45; }
 .sub { line-height: 1.25; }
+
+/* paper figure (section 04 headliner) */
+.figure { margin: 0; }
+.figure .img-slot { aspect-ratio: 2400 / 1029; background: #fff; box-shadow: 0 18px 50px -24px rgb(80 50 20 / .25); }
+.figure figcaption { margin: 12px auto 0; max-width: 92ch; color: var(--muted); font-size: 14px; text-align: center; }

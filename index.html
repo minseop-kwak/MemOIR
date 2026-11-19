@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="stylesheet" href="static/css/style.css?v=202611191900">
+  <link rel="stylesheet" href="static/css/style.css?v=202611192000">
 </head>
 <body>
 
@@ -62,7 +62,7 @@
 
       <div class="hero-right">
         <!-- TODO: teaser clip. Drag to wipe between blocks-world condition and generated video. -->
-        <div class="wipe" data-canvas="videos/teaser/canvas.mp4" data-gen="videos/teaser/generated.mp4"></div>
+        <div class="wipe" data-canvas="videos/lyft/matched/scene-01/condition.mp4" data-gen="videos/lyft/matched/scene-01/ours.mp4"></div>
         <p class="hero-cap">Drag to compare the blocks-world condition with the generated video.</p>
       </div>
     </div>
@@ -121,8 +121,7 @@
 
     <h3 class="sub" id="overview-memory">Instance-level KV Memory Based Long-Horizon Generation</h3>
     <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns.</p>
-    <!-- TODO: long-horizon generation with instance-level memory -->
-    <div class="explainer" data-src="videos/explainer/00-memory.mp4" data-label="Long-horizon video · Instance-level memory"></div>
+    <div class="compare" data-set="memory-overview"></div>
 
     <div class="cols">
       <div class="card">
@@ -273,8 +272,10 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
       </p>
     </div>
 
-    <!-- TODO: explanation video for part 3 -->
-    <div class="explainer" data-src="videos/explainer/03-sim2real.mp4" data-label="Explanation video · Long-Horizon Generation"></div>
+    <figure class="figure">
+      <div class="img-slot" data-src="static/images/memory_figure.png" data-label="Instance-level KV memory"></div>
+      <figcaption>Each instance's tokens are cached in a per-ID token bank, warped to where its block projects in the target frame, re-embedded with target-coordinate RoPE, and aggregated into spatial self-attention.</figcaption>
+    </figure>
 
 
     <h3 class="sub">Long-Horizon Instance Consistency</h3>
@@ -331,6 +332,6 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611191900"></script>
+<script src="static/js/main.js?v=202611192000"></script>
 </body>
 </html>
