@@ -1,5 +1,6 @@
 /* =================================================================
    Live walkthrough player: replays a logged agent session step by step.
+   A code step and the feedback steps right after it are shown as one slide (code, then its output).
    Usage: <div class="walkthrough" data-src="walkthroughs/<id>/walkthrough.json[, more.json]"></div>
    Data format: walkthroughs/FORMAT.md. No external libraries.
    ================================================================= */
@@ -101,17 +102,38 @@
     }).join("") + "</dl>";
   }
 
-  /* ---------- per-step reading time (ms) ---------- */
-  function durFor(st) {
-    if (st.duration) return +st.duration;
+  /* ---------- slides: a code step and the feedback steps right after it are one slide ---------- */
+  function group(steps) {
+    var slides = [], cur = null;
+    steps.forEach(function (st) {
+      if (st.type === "code") { cur = { kind: "pair", code: st, fbs: [] }; slides.push(cur); }
+      else if (st.type === "feedback" && cur) { cur.fbs.push(st); }
+      else { cur = null; slides.push({ kind: st.type in KIND ? st.type : "feedback", step: st }); }
+    });
+    return slides;
+  }
+
+  /* ---------- reading time (ms) ---------- */
+  function nLines(code) { return code ? String(code).split("\n").length : 0; }
+  function fbTime(st) {
+    return 3200 + (st.text || "").length * 30 + (st.kv || []).length * 650 + (st.media || []).length * 2300;
+  }
+  function timing(sl) {
+    // returns {dur, reveal}: total time on screen, and when the feedback half appears
+    var st = sl.step || sl.code;
+    if (st.duration && sl.kind !== "pair") return { dur: +st.duration, reveal: 0 };
+    if (sl.kind === "pair") {
+      var codeT = 2200 + nLines(sl.code.code) * 420 + (sl.code.text || "").length * 30;
+      var fbT = sl.fbs.reduce(function (a, f) { return a + fbTime(f); }, 0);
+      var dur = sl.code.duration ? +sl.code.duration : Math.max(9000, Math.min(codeT + fbT, 32000));
+      return { dur: dur, reveal: sl.fbs.length ? Math.min(codeT, dur * 0.45) : dur };
+    }
     var txt = (st.text || "").length, kv = (st.kv || []).length, media = (st.media || []).length;
-    var lines = st.code ? String(st.code).split("\n").length : 0;
     var d;
-    if (st.type === "code") d = 4000 + lines * 520 + txt * 30;
-    else if (st.type === "result") d = 9000 + lines * 300 + kv * 600 + txt * 30;
-    else if (st.type === "plan") d = 4500 + txt * 32 + kv * 700 + media * 2500;
-    else d = 4000 + txt * 32 + kv * 800 + media * 2600;
-    return Math.max(5000, Math.min(d, st.type === "result" ? 26000 : 18000));
+    if (sl.kind === "result") d = 9000 + nLines(st.code) * 300 + kv * 600 + txt * 30;
+    else if (sl.kind === "plan") d = 4500 + txt * 30 + kv * 700 + media * 2500;
+    else d = fbTime(st);
+    return { dur: Math.max(5000, Math.min(d, sl.kind === "result" ? 26000 : 18000)), reveal: 0 };
   }
 
   /* ---------- one player ---------- */
@@ -119,7 +141,7 @@
     this.root = root;
     this.samples = samples;
     this.si = 0;          // sample index
-    this.k = 0;           // step index
+    this.k = 0;           // slide index
     this.elapsed = 0;
     this.playing = false;
     this.userPaused = false;
@@ -176,7 +198,7 @@
     // arrow keys step through when focus is inside the terminal
     r.querySelector(".wt-term").addEventListener("keydown", function (e) {
       if (e.target && e.target.tagName === "PRE") return;   // let code blocks scroll
-      if (e.key === "ArrowRight") { self.show(Math.min(self.k + 1, self.steps().length - 1)); e.preventDefault(); }
+      if (e.key === "ArrowRight") { self.show(Math.min(self.k + 1, self.slides.length - 1)); e.preventDefault(); }
       else if (e.key === "ArrowLeft") { self.show(Math.max(self.k - 1, 0)); e.preventDefault(); }
     });
     if (multi) {
@@ -191,8 +213,6 @@
       r.querySelector(".wt-next").addEventListener("click", function () { self.load(self.si + 1); self.autoplay(); });
     }
   };
-
-  Player.prototype.steps = function () { return this.samples[this.si].data.steps || []; };
 
   Player.prototype.load = function (i) {
     var n = this.samples.length;
@@ -218,61 +238,83 @@
     if (REDUCE) Array.prototype.forEach.call(this.head.querySelectorAll("video"), function (v) { v.removeAttribute("autoplay"); v.controls = true; });
 
     var self = this;
-    var steps = this.steps();
+    var slides = this.slides = group(d.steps || []);
     var ci = 0;
-    this.codeNo = steps.map(function (st) { return st.type === "code" ? ++ci : 0; });
-    this.durs = steps.map(durFor);
-    this.prog.innerHTML = steps.map(function (st, j) {
-      return '<button type="button" class="wt-seg" aria-label="Step ' + (j + 1) + " of " + steps.length + ": " +
-        esc((KIND[st.type] || st.type) + ", " + (st.label || "")) + '"><i></i></button>';
+    slides.forEach(function (sl) { sl.no = sl.kind === "pair" ? ++ci : 0; sl.t = timing(sl); });
+    this.prog.innerHTML = slides.map(function (sl, j) {
+      return '<button type="button" class="wt-seg" aria-label="Step ' + (j + 1) + " of " + slides.length + ": " +
+        esc(self.slideLabel(sl)) + '"><i></i></button>';
     }).join("");
     this.segs = Array.prototype.slice.call(this.prog.querySelectorAll(".wt-seg"));
     this.segs.forEach(function (b, j) { b.addEventListener("click", function () { self.show(j); if (!self.userPaused && !REDUCE) self.play(); }); });
 
     var dots = this.root.querySelectorAll(".wt-dot");
-    Array.prototype.forEach.call(dots, function (d, j) {
-      d.classList.toggle("on", j === self.si);
-      if (j === self.si) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current");
+    Array.prototype.forEach.call(dots, function (dd, j) {
+      dd.classList.toggle("on", j === self.si);
+      if (j === self.si) dd.setAttribute("aria-current", "true"); else dd.removeAttribute("aria-current");
     });
     var cc = this.root.querySelector(".wt-ccount");
     if (cc) cc.textContent = (this.si + 1) + " / " + this.samples.length + " · " + (d.title || d.id);
     this.show(0);
   };
 
-  Player.prototype.renderStep = function (st, j) {
+  Player.prototype.slideLabel = function (sl) {
+    var st = sl.step || sl.code;
+    return st.label || KIND[st.type] || "";
+  };
+
+  function head(kind, tag, label) {
+    return '<div class="wt-step-h wt-h-' + kind + '">' + ICON[kind] + '<span class="wt-step-k">' + esc(tag) + "</span>" +
+      (label ? '<span class="wt-step-l">' + esc(label) + "</span>" : "") + "</div>";
+  }
+  function fbBody(st, base) {
+    return (st.text ? '<p class="wt-text wt-callout">' + rich(st.text) + "</p>" : "") + kvBlock(st.kv) + mediaGrid(st.media, base);
+  }
+
+  Player.prototype.renderSlide = function (sl) {
     var base = this.samples[this.si].base;
-    var kind = st.type in KIND ? st.type : "feedback";
-    var tag = kind === "code" ? "Step " + this.codeNo[j] + " · Code" : KIND[kind];
-    var html = '<div class="wt-step wt-is-' + kind + '">' +
-      '<div class="wt-step-h">' + ICON[kind] + '<span class="wt-step-k">' + esc(tag) + "</span>" +
-      (st.label ? '<span class="wt-step-l">' + esc(st.label) + "</span>" : "") + "</div>";
-    if (kind === "code") {
-      if (st.text) html += '<p class="wt-text">' + rich(st.text) + "</p>";
-      html += codeBlock(st.code || "");
-    } else if (kind === "result") {
-      if (st.text) html += '<p class="wt-text">' + rich(st.text) + "</p>";
-      html += mediaGrid(st.media, base) + kvBlock(st.kv);
-      if (st.code) html += '<div class="wt-file">scene_world.py (excerpt)</div>' + codeBlock(st.code);
-    } else {
-      if (st.text) html += '<p class="wt-text wt-callout">' + rich(st.text) + "</p>";
-      html += kvBlock(st.kv) + mediaGrid(st.media, base);
+    if (sl.kind === "pair") {
+      var c = sl.code;
+      var html = '<div class="wt-step wt-pair' + (sl.fbs.length ? "" : " solo") + '">' +
+        '<section class="wt-pc">' + head("code", "Step " + sl.no + " · Code", c.label) +
+        (c.text ? '<p class="wt-text">' + rich(c.text) + "</p>" : "") + codeBlock(c.code || "") + "</section>";
+      if (sl.fbs.length) {
+        html += '<div class="wt-link" aria-hidden="true"><span class="wt-link-line"></span>' +
+          '<span class="wt-link-tag">' + ICON.next + "output</span><span class=\"wt-link-line\"></span></div>" +
+          '<section class="wt-pf"><p class="wt-wait">running…</p>' +
+          sl.fbs.map(function (f) {
+            return '<div class="wt-fb">' + head("feedback", "Feedback", f.label) + fbBody(f, base) + "</div>";
+          }).join("") + "</section>";
+      }
+      return html + "</div>";
     }
-    return html + "</div>";
+    var st = sl.step, kind = sl.kind;
+    var out = '<div class="wt-step wt-is-' + kind + '">' + head(kind, KIND[kind], st.label);
+    if (kind === "result") {
+      if (st.text) out += '<p class="wt-text">' + rich(st.text) + "</p>";
+      out += mediaGrid(st.media, base) + kvBlock(st.kv);
+      if (st.code) out += '<div class="wt-file">scene_world.py (excerpt)</div>' + codeBlock(st.code);
+    } else if (kind === "code") {
+      out += codeBlock(st.code || "");
+    } else {
+      out += fbBody(st, base);
+    }
+    return out + "</div>";
   };
 
   Player.prototype.show = function (j) {
-    var steps = this.steps();
-    if (!steps.length) return;
-    this.k = Math.max(0, Math.min(j, steps.length - 1));
+    var slides = this.slides;
+    if (!slides.length) return;
+    this.k = Math.max(0, Math.min(j, slides.length - 1));
     this.elapsed = 0;
     this.ended = false;
-    var st = steps[this.k];
+    var sl = slides[this.k];
     this.stopVideos();
-    this.screen.innerHTML = this.renderStep(st, this.k);
+    this.screen.innerHTML = this.renderSlide(sl);
     this.screen.scrollTop = 0;
     this.userScrolled = false;
-    this.nowLabel.textContent = st.label || KIND[st.type] || "";
-    this.nowCount.textContent = (this.k + 1) + " / " + steps.length;
+    this.nowLabel.textContent = this.slideLabel(sl);
+    this.nowCount.textContent = (this.k + 1) + " / " + slides.length;
     var self = this;
     this.segs.forEach(function (b, i) {
       b.classList.toggle("done", i < self.k);
@@ -282,24 +324,41 @@
     });
     // wide images (BEV strips, sheets) take a full row once their size is known
     Array.prototype.forEach.call(this.screen.querySelectorAll(".wt-fig img"), function (img) {
-      function mark() { if (img.naturalWidth / Math.max(1, img.naturalHeight) > 2.2) img.closest(".wt-fig").classList.add("wide"); }
+      var lim = img.closest(".wt-pf") ? 2.6 : 2.2;   // the narrower output column keeps 2.3:1 crops two-up
+      function mark() { if (img.naturalWidth / Math.max(1, img.naturalHeight) > lim) img.closest(".wt-fig").classList.add("wide"); }
       if (img.complete) mark(); else img.addEventListener("load", mark);
     });
-    // code: reveal lines one by one while playing
-    this.lines = Array.prototype.slice.call(this.screen.querySelectorAll(".wt-code .wt-ln"));
-    this.typing = this.playing && !REDUCE && st.type === "code";
-    if (this.typing) this.lines.forEach(function (l) { l.classList.add("hid"); });
-    this.typeEnd = Math.min(this.durs[this.k] * 0.45, this.lines.length * 140);
+    this.pair = this.screen.querySelector(".wt-pair");
+    this.pre = this.screen.querySelector(".wt-pc .wt-code");
+    this.lines = Array.prototype.slice.call(this.screen.querySelectorAll(".wt-pc .wt-ln, .wt-is-code .wt-ln"));
+    this.typeEnd = Math.min(sl.t.reveal * 0.55, this.lines.length * 160);
+    if (this.playing && !REDUCE) this.arm(); else this.revealAll();
     this.startVideos();
     this.preload(this.k + 1);
     this.setPlayIcon();
   };
 
+  // start-of-slide state while playing: code types in, feedback waits
+  Player.prototype.arm = function () {
+    this.typing = this.lines.length > 0;
+    this.lines.forEach(function (l) { l.classList.add("hid"); });
+    this.revealed = !(this.pair && this.screen.querySelector(".wt-pf"));
+    if (!this.revealed) this.pair.classList.add("pending");
+  };
+  Player.prototype.revealAll = function () {
+    this.typing = false;
+    this.revealed = true;
+    if (this.lines) this.lines.forEach(function (l) { l.classList.remove("hid"); });
+    if (this.pair) this.pair.classList.remove("pending");
+  };
+
   Player.prototype.preload = function (j) {
-    var st = this.steps()[j];
-    if (!st || !st.media) return;
+    var sl = this.slides[j];
+    if (!sl) return;
     var base = this.samples[this.si].base;
-    st.media.forEach(function (m) { if (!isVideo(m.src)) { var im = new Image(); im.src = new URL(m.src, base).href; } });
+    var list = [];
+    (sl.fbs || []).concat(sl.step ? [sl.step] : []).forEach(function (st) { list = list.concat(st.media || []); });
+    list.forEach(function (m) { if (!isVideo(m.src)) { var im = new Image(); im.src = new URL(m.src, base).href; } });
   };
 
   Player.prototype.startVideos = function () {
@@ -328,11 +387,7 @@
     if (this.playing) return;
     this.playing = true;
     this.last = null;
-    var st = this.steps()[this.k];
-    if (this.elapsed === 0 && !REDUCE && st && st.type === "code" && this.lines.length) {
-      this.typing = true;   // a code step shown while paused types out once playback starts
-      this.lines.forEach(function (l) { l.classList.add("hid"); });
-    }
+    if (this.elapsed === 0 && !REDUCE) this.arm();   // a slide shown while paused replays from its start
     var self = this;
     this.raf = requestAnimationFrame(function f(ts) { self.tick(ts); if (self.playing) self.raf = requestAnimationFrame(f); });
     this.setPlayIcon();
@@ -341,8 +396,7 @@
     this.playing = false;
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = null;
-    this.typing = false;
-    if (this.lines) this.lines.forEach(function (l) { l.classList.remove("hid"); });
+    this.revealAll();
     this.setPlayIcon();
   };
   Player.prototype.autoplay = function () { if (this.visible && !this.userPaused && !REDUCE) this.play(); };
@@ -351,23 +405,33 @@
     var dt = this.last == null ? 0 : Math.min(ts - this.last, 100);
     this.last = ts;
     this.elapsed += dt;
-    var dur = this.durs[this.k];
+    var sl = this.slides[this.k], dur = sl.t.dur, reveal = sl.t.reveal;
     var seg = this.segs[this.k];
     if (seg) seg.querySelector("i").style.width = Math.min(100, (this.elapsed / dur) * 100) + "%";
     if (this.typing && this.lines.length) {
       var n = Math.ceil((this.elapsed / Math.max(1, this.typeEnd)) * this.lines.length);
       for (var i = 0; i < this.lines.length && i < n; i++) this.lines[i].classList.remove("hid");
+      if (this.pre && n > 0) {   // keep the newest typed line in view inside a capped code box
+        var lastLine = this.lines[Math.min(n, this.lines.length) - 1];
+        var below = lastLine.offsetTop + lastLine.offsetHeight - this.pre.clientHeight + 14;
+        if (below > this.pre.scrollTop) this.pre.scrollTop = below;
+      }
       if (n >= this.lines.length) this.typing = false;
     }
-    // a step taller than the screen scrolls down slowly in its second half (unless the reader scrolled)
+    if (!this.revealed && this.elapsed >= reveal) {
+      this.revealed = true;
+      this.pair.classList.remove("pending");
+      if (this.pre) this.pre.scrollTop = 0;
+    }
+    // content taller than the screen scrolls down slowly after the feedback appeared (unless the reader scrolled)
     var over = this.screen.scrollHeight - this.screen.clientHeight;
-    if (over > 4 && !this.userScrolled && !REDUCE) {
-      var p = (this.elapsed - dur * 0.4) / (dur * 0.45);
-      p = Math.max(0, Math.min(1, p));
+    if (over > 4 && !this.userScrolled && !REDUCE && this.revealed) {
+      var t0 = Math.max(reveal + 1200, dur * 0.35), t1 = dur * 0.88;
+      var p = Math.max(0, Math.min(1, (this.elapsed - t0) / Math.max(1, t1 - t0)));
       this.screen.scrollTop = Math.round(p * p * (3 - 2 * p) * over);
     }
     if (this.elapsed >= dur) {
-      if (this.k < this.steps().length - 1) { this.show(this.k + 1); }
+      if (this.k < this.slides.length - 1) { this.show(this.k + 1); }
       else if (this.samples.length > 1) { this.load(this.si + 1); }
       else { this.pause(); this.ended = true; this.setPlayIcon(); }
     }

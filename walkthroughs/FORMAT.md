@@ -49,7 +49,7 @@ prev / next buttons and dots, and moves on to the next sample when one finishes.
 | `subtitle` | no | data source, clip length, agent or version |
 | `task` | yes | one plain sentence: what the agent was asked to do |
 | `inputs` | no | 1-6 input frames or clips shown in the header, `{"src", "label"}` |
-| `steps` | yes | the session, in order; about 10-16 steps reads well |
+| `steps` | yes | the session, in order; about 10-16 steps (6-10 slides) reads well |
 
 Step fields:
 
@@ -61,13 +61,29 @@ Step fields:
 | `code` | `code`, `result` | Python source, shown with syntax highlighting (code steps type out line by line) |
 | `media` | `plan`, `feedback`, `result` | list of `{"src", "label", "poster"?}`; jpg / png / webp / mp4 |
 | `kv` | `plan`, `feedback`, `result` | list of `["key", "value"]` lines (tool printouts, kernel state) |
-| `duration` | all (optional) | milliseconds the step stays on screen; by default it is computed from the amount of code, text, media and kv |
+| `duration` | all (optional) | milliseconds the slide stays on screen; by default it is computed from the amount of code, text, media and kv (on a `code` step: the whole code + feedback slide) |
 
-Code steps are numbered automatically ("Step 3 · Code").
+## Slides: code and its output together
+
+The player groups steps into slides at render time: a `code` step and the `feedback` step(s)
+directly after it form ONE slide. The code types in first, then its feedback appears on the same
+slide under an "output" marker (side by side on wide screens: code left, output right; stacked on
+phones). `plan` and `result` are slides of their own; a `feedback` step without a preceding `code`
+step is also its own slide. The progress bar and the "n / N" counter count slides, and a slide is
+labelled with its code step's `label`. Code steps are numbered automatically ("Step 3 · Code").
+
+So, when you log a session:
+- put each check right after the code that produced it (code, then feedback, then the next code);
+- keep a code step to the few lines that matter (about 4-12 lines; the code box is capped in height
+  and scrolls); long cells are condensed, see the rules below;
+- keep one slide's feedback to a short text, a few `kv` lines and at most about three images, so the
+  pair fits on one screen at 1440x900.
+
+`duration` on a `code` step sets the time of the whole slide (code + its feedback).
 
 Paths in `src` and `poster` are relative to the json file. Videos play muted and looped while their
-step is on screen; give them a `poster`. Images open full size in a new tab when clicked; images
-wider than 2.2:1 take a full row.
+slide is on screen; give them a `poster`. Images open full size in a new tab when clicked; images
+wider than 2.2:1 (2.6:1 in the output column of a code slide) take a full row.
 
 ## Rules for logging a session
 
