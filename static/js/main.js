@@ -37,11 +37,11 @@ const SETS = {
     dir: 'videos/codeworld',
     native: true,
     tabs: [
-      { id: 'lane-change', label: 'Lane Change' },
       { id: 'cut-in', label: 'Cut-In' },
       { id: 'merge', label: 'Overtake and Merge' },
       { id: 'right-turn', label: 'Right Turn' },
       { id: 'left-turn', label: 'Left Turn' },
+      { id: 'lane-change', label: 'Lane Change' },
     ],
     rows: [
       [['condition-original', 'Original Blocks World'], ['condition-edited', 'Edited Blocks World']],
@@ -520,8 +520,15 @@ function buildExplainer(root) {
   if (root.dataset.poster) {                         // click-to-play video: poster now, nothing fetched until play
     v.poster = root.dataset.poster;
     v.preload = 'none';
+    v.controls = false;                              // no dark control bar over the poster until it plays
     root.classList.add('is-loaded');
-    v.tabIndex = 0;
+    const btn = el('button', 'play-btn');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Play ' + (root.dataset.label || 'video'));
+    root.append(btn);
+    const start = () => { btn.remove(); v.controls = true; v.play().catch(() => {}); };
+    btn.addEventListener('click', start);
+    v.addEventListener('play', () => { if (btn.isConnected) { btn.remove(); v.controls = true; } });
   }
   v.src = src;
 }
