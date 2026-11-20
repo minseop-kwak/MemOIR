@@ -257,6 +257,29 @@ function fmt(t) {
   return `${m}:${s}`;
 }
 
+/* ---------- download parking ----------
+   A video whose block was scrolled past (or whose tab was hidden) stops downloading, so the block in view gets
+   the connection; its poster stays in place. unpark() resumes it from the same time. Complete downloads are kept. */
+
+function park(v) {
+  const src = v.getAttribute('src');
+  if (!src) return;
+  const b = v.buffered;
+  if (isFinite(v.duration) && b.length && b.start(0) <= 0.05 && b.end(b.length - 1) >= v.duration - 0.05) return;
+  v.dataset.t = v.currentTime;
+  v.dataset.parked = src;
+  v.removeAttribute('src');
+  v.load();
+}
+
+function unpark(v) {
+  if (v.getAttribute('src') || !v.dataset.parked) return;
+  const t = Number(v.dataset.t) || 0;
+  if (t) v.addEventListener('loadedmetadata', () => { v.currentTime = t; }, { once: true });
+  v.src = v.dataset.parked;
+  delete v.dataset.parked;
+}
+
 /* ---------- synced playback ---------- */
 
 class SyncGroup {
@@ -299,7 +322,7 @@ class SyncGroup {
   }
 
   clear() {
-    this.videos.forEach(v => v.pause());
+    this.videos.forEach(v => { v.pause(); park(v); });   // tab switch: the hidden tab stops downloading
     this.videos = [];
   }
 
@@ -333,9 +356,16 @@ class SyncGroup {
 
   setVisible(visible) {
     this.visible = visible;
-    if (!visible) this.videos.forEach(v => v.pause());
-    else if (this.playing) this.play();
+    if (visible) {
+      this.seen = true;
+      this.videos.forEach(unpark);                    // resume downloads stopped when the block left the screen
+      if (this.playing) this.play();
+      return;
+    }
+    this.videos.forEach(v => v.pause());
+    if (this.seen) this.videos.forEach(park);         // scrolled past (not merely loaded ahead): free the link
   }
+
 
   setEvents(events = [], duration) {
     const track = this.bar.querySelector('.track');
@@ -447,7 +477,10 @@ function buildCompare(root) {
       if (!v.getAttribute('src')) waiting.push([fig, v]);
       group.add(v);
     });
-    const go = () => waiting.forEach(([fig, v]) => { if (!v.getAttribute('src')) v.src = fig.dataset.src; });
+    const go = () => waiting.forEach(([fig, v]) => {
+      if (v.dataset.parked) unpark(v);
+      else if (!v.getAttribute('src')) v.src = fig.dataset.src;
+    });
     Promise.race([Promise.all(stills), new Promise(r => setTimeout(r, 1500))]).then(go);
     if (group.playing && group.visible) group.play();   // preloaded a screen early: wait until in view
   }
