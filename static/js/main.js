@@ -6,8 +6,12 @@
  * to mark moments on the shared scrubber (e.g. a vehicle leaving / returning).
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
+ * Every video has a first-frame still `${key}.jpg` beside it, shown the moment its tab loads.
+ * `phone: [keys]` lists videos that also have a 960-wide `${key}.m.mp4`, used on screens up to 900 px.
  */
 const MEDIA_V = '202611200340';   // appended to every video URL so a browser never shows a stale cached file
+const POSTER_V = '202611201330';  // first-frame stills and phone copies
+const PHONE = window.matchMedia('(max-width: 900px)').matches;
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -36,6 +40,7 @@ const SETS = {
   'codeworld-edit': {
     dir: 'videos/codeworld',
     native: true,
+    phone: ['condition-original', 'condition-edited', 'ours-original', 'ours-edited'],   // 1224x816
     tabs: [
       { id: 'cut-in', label: 'Cut-In' },
       { id: 'merge', label: 'Overtake and Merge' },
@@ -106,6 +111,7 @@ const SETS = {
   'agent-refine': {
     dir: 'videos/single-image/agent',
     aspect: '16 / 9',
+    phone: ['construction'],   // 1920x1080
     tabs: scenes(1),
     rows: [[['construction', 'LLM-Agent Refinement from a Single Image']]],
   },
@@ -382,8 +388,10 @@ function buildCompare(root) {
       r.style.setProperty('--n', row.length);
       for (const [key, label] of row) {
         const fig = el('figure', 'slot' + (key.startsWith('ours') ? ' is-ours' : ''));
-        const src = `${set.dir}/${tab.id}/${key}.mp4?v=${MEDIA_V}`;
+        const base = `${set.dir}/${tab.id}/${key}`;
+        const src = PHONE && set.phone && set.phone.includes(key) ? `${base}.m.mp4?v=${POSTER_V}` : `${base}.mp4?v=${MEDIA_V}`;
         fig.dataset.src = src;
+        fig.dataset.poster = `${base}.jpg?v=${POSTER_V}`;
         const media = el('div', 'slot-media');
         media.append(placeholder(label, src));
         const cap = el('figcaption');
@@ -405,36 +413,57 @@ function buildCompare(root) {
     group.clear();
     group.setEvents();
 
+    // Stills first: each slot shows its first-frame still at once; the videos are requested only once the
+    // stills are in (or after 1.5 s), so on a slow link the stills never queue behind video data.
     const tab = set.tabs[i];
+    const stills = [];
+    const waiting = [];
     panelFor[i].querySelectorAll('.slot').forEach(fig => {
       let v = fig.querySelector('video');
       if (!v) {
-        v = makeVideo(fig.dataset.src, () => {
+        v = el('video');
+        v.muted = true;
+        v.loop = true;
+        v.playsInline = true;
+        v.preload = 'auto';
+        v.poster = fig.dataset.poster;
+        v.addEventListener('loadeddata', () => {
           fig.classList.add('is-loaded');
           if (set.native && v.videoWidth) fig.style.setProperty('--aspect', `${v.videoWidth} / ${v.videoHeight}`);
           if (tab.events && v === group.master) group.setEvents(tab.events, v.duration);
-        });
+        }, { once: true });
+        stills.push(new Promise(done => {
+          const still = new Image();                   // same request as the poster
+          still.onload = () => {
+            fig.classList.add('is-loaded');
+            if (set.native && !v.videoWidth) fig.style.setProperty('--aspect', `${still.naturalWidth} / ${still.naturalHeight}`);
+            done();
+          };
+          still.onerror = done;                        // no still: the video alone fills the slot
+          still.src = fig.dataset.poster;
+        }));
         fig.querySelector('.slot-media').prepend(v);
       }
+      if (!v.getAttribute('src')) waiting.push([fig, v]);
       group.add(v);
     });
-    if (group.playing) group.play();
+    const go = () => waiting.forEach(([fig, v]) => { if (!v.getAttribute('src')) v.src = fig.dataset.src; });
+    Promise.race([Promise.all(stills), new Promise(r => setTimeout(r, 1500))]).then(go);
+    if (group.playing && group.visible) group.play();   // preloaded a screen early: wait until in view
   }
+
 
   if (set.tabs.length > 1) root.append(tabs);   // a single scene needs no tab
   root.append(panels, bar);
 
-  // Load the first tab only once the block scrolls near the viewport.
-  let started = false;
+  // Load the first tab about one screen before the block scrolls into view; play only while it is (nearly) visible.
+  new IntersectionObserver((entries, ob) => {
+    if (!entries.some(e => e.isIntersecting)) return;
+    ob.disconnect();
+    activate(0);
+  }, { rootMargin: '100% 0px' }).observe(root);
   new IntersectionObserver(entries => {
-    for (const e of entries) {
-      if (e.isIntersecting && !started) {
-        started = true;
-        group.visible = true;
-        activate(0);
-      }
-      group.setVisible(e.isIntersecting);
-    }
+    for (const e of entries) group.setVisible(e.isIntersecting);
   }, { rootMargin: '200px 0px' }).observe(root);
 }
 
