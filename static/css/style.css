@@ -163,6 +163,7 @@ code { font-family: var(--font-mono); font-size: .86em; }
   justify-content: center;
   padding-inline: 16px;
   margin-top: -22px;
+  margin-bottom: clamp(28px, 3.5vw, 44px);   /* room between the bar and the first section rule */
   pointer-events: none;
 }
 .toc .wrap {
