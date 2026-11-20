@@ -7,7 +7,7 @@
  * A set can give `aspect` (CSS aspect-ratio for its slots, default 3 / 2), and
  * `native: true` to resize each slot to its video's own aspect once it loads.
  */
-const MEDIA_V = '202611200143';   // appended to every video URL so a browser never shows a stale cached file
+const MEDIA_V = '202611200310';   // appended to every video URL so a browser never shows a stale cached file
 
 const scenes = (n, prefix = 'scene') =>
   Array.from({ length: n }, (_, i) => ({ id: `${prefix}-0${i + 1}`, label: `Scene ${i + 1}` }));
@@ -495,15 +495,29 @@ function buildExplainer(root) {
   v.tabIndex = -1;                                   // not focusable while the placeholder covers it
   v.setAttribute('aria-label', root.dataset.label || 'Video');
   v.addEventListener('loadedmetadata', () => { root.classList.add('is-loaded'); v.tabIndex = 0; }, { once: true });
-  if (root.dataset.autoplay) {                       // animations: muted loop, play only while on screen
+  root.prepend(v);
+  if (root.dataset.autoplay) {                       // animations: muted loop, fetched only when near the view
     v.muted = true;
     v.loop = true;
-    v.preload = 'auto';
-    new IntersectionObserver(es => es.forEach(e => (e.isIntersecting ? v.play().catch(() => {}) : v.pause())),
+    v.preload = 'none';
+    if (root.dataset.poster) {                       // a still stands in until the video is fetched
+      v.poster = root.dataset.poster;
+      root.classList.add('is-loaded');
+    }
+    new IntersectionObserver((es, ob) => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      v.preload = 'auto';
+      v.src = src;
+      ob.disconnect();
+    }), { rootMargin: '300px 0px' }).observe(root);
+    new IntersectionObserver(es => es.forEach(e => (e.isIntersecting && v.src ? v.play().catch(() => {}) : v.pause())),
       { threshold: 0.35 }).observe(root);
+    v.addEventListener('loadeddata', () => {
+      if (root.getBoundingClientRect().top < window.innerHeight) v.play().catch(() => {});
+    }, { once: true });
+    return;
   }
   v.src = src;
-  root.prepend(v);
 }
 
 /* ---------- static images ---------- */
