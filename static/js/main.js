@@ -84,7 +84,7 @@ const SETS = {
     ],
     rows: [
       [['condition', 'Blocks-World Condition'], ['ours', 'MemOIR (Ours)']],
-      [['cosmos-naive', 'Cosmos-Predict2.5 (Naive)'], ['omnidreams', 'OmniDreams'], ['magi-1', 'MAGI-1 (24B)'], ['epona', 'Epona']],
+      [['magi-1', 'MAGI-1 (24B)'], ['epona', 'Epona'], ['cosmos-naive', 'Cosmos-Predict2.5 (Naive)'], ['omnidreams', 'OmniDreams']],
     ],
   },
 
