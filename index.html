@@ -76,6 +76,7 @@
     <a href="#real2sim">Video → Code World</a>
     <a href="#manipulate">Controllable Generation</a>
     <a href="#sim2real">Long-Horizon Generation</a>
+    <a href="#general">General Video</a>
     <a href="#bibtex">BibTeX</a>
   </div>
 </nav>
@@ -284,24 +285,39 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
     <p class="desc">The second half of each video replays the drive in reverse, so every object is seen again. Where outlined, revisited objects are shown in <span class="c1">blue</span> on the way out and in <span class="c2">orange</span> on the way back.</p>
     <div class="compare" data-set="revisit"></div>
 
-    <h3 class="sub" id="consistency-pedestrian">Pedestrian Identity on Another Video Model</h3>
-    <p class="desc">The same instance memory on another video model: a person leaves the view and returns in the next generation chunk with the same appearance (outlined in <span class="c1">blue</span> before and <span class="c2">orange</span> after).</p>
-    <div class="compare" data-set="wan-pedestrians"></div>
-
-    <h3 class="sub" id="consistency-face">Face Identity after a Turn-Away</h3>
-    <p class="desc">A face turns away at the chunk boundary and turns back with the same identity.</p>
-    <div class="compare" data-set="wan-faces"></div>
-
     <h3 class="sub">Ablation: Instance-level KV Caching</h3>
     <p class="desc">The memory components added one at a time. The target vehicle (green box) must keep its appearance across generation chunks, or after leaving the view and returning.</p>
     <div class="compare" data-set="ablation-kv"></div>
   </div>
 </section>
 
-<!-- ============================================================ BIBTEX -->
-<section class="section" id="bibtex">
+<!-- ============================================================ 05 GENERAL VIDEO -->
+<section class="section" id="general">
   <div class="wrap">
-    <p class="kicker"><span class="kn">05</span> Citation</p>
+    <div class="sec-head split">
+      <div>
+        <p class="kicker"><span class="kn">05</span> Beyond Driving</p>
+        <h2 class="sec-title">Instance-Level Memory for General Video</h2>
+      </div>
+      <p class="sec-lede">
+        The instance-level KV memory is not specific to driving or to one video model. Added to <strong>Wan2.1-VACE</strong>, a general-purpose controllable video model, it keeps people and faces consistent: an instance that leaves the view or turns away at a chunk boundary returns with the same identity.
+      </p>
+    </div>
+
+    <h3 class="sub" id="consistency-pedestrian">Pedestrian Identity across Generation Chunks</h3>
+    <p class="desc">A person leaves the view and returns in the next generation chunk with the same appearance (outlined in <span class="c1">blue</span> before and <span class="c2">orange</span> after). Generation is conditioned on depth.</p>
+    <div class="compare" data-set="wan-pedestrians"></div>
+
+    <h3 class="sub" id="consistency-face">Face Identity after a Turn-Away</h3>
+    <p class="desc">A face turns away at the chunk boundary and turns back with the same identity. Generation is conditioned on pose.</p>
+    <div class="compare" data-set="wan-faces"></div>
+  </div>
+</section>
+
+<!-- ============================================================ BIBTEX -->
+<section class="section bg" id="bibtex">
+  <div class="wrap">
+    <p class="kicker"><span class="kn">06</span> Citation</p>
     <h2 class="sec-title">BibTeX</h2>
     <div class="bib">
       <button class="copy" type="button">Copy</button>
