@@ -510,7 +510,15 @@
       if (window.console) console.warn("[walkthrough]", err);
     });
   }
-  function init() { Array.prototype.forEach.call(document.querySelectorAll(".walkthrough[data-src]"), boot); }
+  function init() {                       // boot each walkthrough only when it nears the view (keeps the first paint light)
+    Array.prototype.forEach.call(document.querySelectorAll(".walkthrough[data-src]"), function (el) {
+      if (!("IntersectionObserver" in window)) return boot(el);
+      var io = new IntersectionObserver(function (es) {
+        if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); boot(el); }
+      }, { rootMargin: "800px 0px" });
+      io.observe(el);
+    });
+  }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
   window.Walkthrough = { init: init };

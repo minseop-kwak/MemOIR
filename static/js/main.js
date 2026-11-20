@@ -441,24 +441,23 @@ function buildCompare(root) {
 /* ---------- teaser wipe ---------- */
 
 function buildWipe(root) {
-  const bottom = el('div', 'layer bottom');
-  const top = el('div', 'layer top');
+  // the two layers and their videos are in the markup (fetched during parse); this adds the handle, tags and sync
+  const bottom = root.querySelector('.layer.bottom');
+  const top = root.querySelector('.layer.top');
+  const vBottom = bottom.querySelector('video');
+  const vTop = top.querySelector('video');
   const handle = el('div', 'handle');
   const tagL = el('span', 'tag left');
   const tagR = el('span', 'tag right');
   tagL.textContent = 'Blocks-World';
   tagR.textContent = 'Generated';
+  vBottom.muted = vTop.muted = true;                 // muted property, not just the attribute, for autoplay policies
+  [vBottom, vTop].forEach(v => {
+    if (v.readyState >= 2) v.play().catch(() => {});
+    else v.addEventListener('loadeddata', () => v.play().catch(() => {}), { once: true });
+  });
+  root.append(handle, tagL, tagR);
 
-  bottom.append(placeholder('Blocks-World Condition', root.dataset.canvas));
-  top.append(placeholder('Generated Video', root.dataset.gen));
-
-  const vBottom = makeVideo(root.dataset.canvas, () => bottom.classList.add('is-loaded'));
-  const vTop = makeVideo(root.dataset.gen, () => top.classList.add('is-loaded'));
-  bottom.prepend(vBottom);
-  top.prepend(vTop);
-  root.append(bottom, top, handle, tagL, tagR);
-
-  [vBottom, vTop].forEach(v => v.addEventListener('loadeddata', () => v.play().catch(() => {})));
   vTop.addEventListener('timeupdate', () => {
     if (vBottom.readyState >= 2 && Math.abs(vBottom.currentTime - vTop.currentTime) > 0.1) {
       vBottom.currentTime = vTop.currentTime;
@@ -500,12 +499,10 @@ function buildExplainer(root) {
     v.muted = true;
     v.loop = true;
     v.preload = 'none';
-    if (root.dataset.poster) {                       // a still stands in until the video is fetched
-      v.poster = root.dataset.poster;
-      root.classList.add('is-loaded');
-    }
+    if (root.dataset.poster) root.classList.add('is-loaded');
     new IntersectionObserver((es, ob) => es.forEach(e => {
       if (!e.isIntersecting) return;
+      if (root.dataset.poster) v.poster = root.dataset.poster;   // poster and video fetched only near the view
       v.preload = 'auto';
       v.src = src;
       ob.disconnect();
@@ -517,8 +514,12 @@ function buildExplainer(root) {
     }, { once: true });
     return;
   }
-  if (root.dataset.poster) {                         // click-to-play video: poster now, nothing fetched until play
-    v.poster = root.dataset.poster;
+  if (root.dataset.poster) {                         // click-to-play video: poster near the view, nothing else until play
+    new IntersectionObserver((es, ob) => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      v.poster = root.dataset.poster;
+      ob.disconnect();
+    }), { rootMargin: '600px 0px' }).observe(root);
     v.preload = 'none';
     v.controls = false;                              // no dark control bar over the poster until it plays
     root.classList.add('is-loaded');
@@ -544,7 +545,12 @@ function buildImage(root) {
     root.prepend(img);
     root.classList.add('is-loaded');
   };
-  img.src = src;
+  if (!('IntersectionObserver' in window)) { img.src = src; return; }
+  new IntersectionObserver((es, ob) => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    img.src = src;
+    ob.disconnect();
+  }), { rootMargin: '600px 0px' }).observe(root);
 }
 
 /* ---------- bibtex copy ---------- */
