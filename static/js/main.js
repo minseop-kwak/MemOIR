@@ -752,6 +752,33 @@ function buildExplainer(root) {
     }, { once: true });
     return;
   }
+  if (root.dataset.autostart) {                      // the summary video: plays by itself once scrolled to (silent, so muted)
+    v.muted = true;
+    v.preload = 'none';
+    let userPaused = false, autoPausing = false;
+    if (root.dataset.poster) root.classList.add('is-loaded');
+    new IntersectionObserver((es, ob) => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      if (root.dataset.poster) v.poster = root.dataset.poster;
+      v.preload = 'auto';                            // fetched a little ahead so it starts at once
+      v.src = src;
+      ob.disconnect();
+    }), { rootMargin: '600px 0px' }).observe(root);
+    const auto = play => {                           // scrolling pauses/resumes it, unless the viewer paused it
+      if (!v.src || userPaused || v.ended) return;
+      if (play) v.play().catch(() => {});
+      else if (!v.paused) { autoPausing = true; v.pause(); }
+    };
+    v.addEventListener('pause', () => {
+      if (autoPausing) autoPausing = false;
+      else if (!v.ended) userPaused = true;
+    });
+    v.addEventListener('play', () => { userPaused = false; });
+    let inView = false;
+    new IntersectionObserver(es => es.forEach(e => { inView = e.isIntersecting; auto(inView); }), { threshold: 0.5 }).observe(root);
+    v.addEventListener('loadeddata', () => { if (inView) auto(true); }, { once: true });
+    return;
+  }
   if (root.dataset.poster) {                         // click-to-play video: poster near the view, nothing else until play
     new IntersectionObserver((es, ob) => es.forEach(e => {
       if (!e.isIntersecting) return;
