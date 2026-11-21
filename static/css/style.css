@@ -600,3 +600,29 @@ footer .wrap { display: flex; justify-content: center; }
 .explainer.summary .play-btn { top: 76%; }   /* between the subtitle and the step bar of the title card */
 /* logo in front of the page title */
 .hero-title .title-logo { display: inline-block; width: auto; height: .86em; margin: 0 .3em 0 0; vertical-align: -.06em; }
+
+/* ---------- BEV route beside the long-horizon grid ---------- */
+.bev-body { display: grid; grid-template-columns: minmax(0, 1fr) clamp(120px, 16%, 200px); gap: 12px; align-items: stretch; }
+.bev { display: flex; flex-direction: column; min-width: 0; margin: 0; }
+.bev-map { position: relative; flex: 1 1 auto; min-height: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #eee8dc; }
+.bev-map svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.bev figcaption { margin-top: 7px; color: var(--muted); font-size: 13px; text-align: center; }
+.bev-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 10px; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.bev-key { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.bev-key::before { content: ""; width: 14px; height: 3px; border-radius: 2px; background: var(--c); }
+.bev-ground { fill: #eee8dc; }
+.bev-blocks polygon { fill: #e2dacb; }
+.bev-road-edge polyline, .bev-road polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bev-road-edge polyline { stroke: #cfc5b3; stroke-width: var(--edge-w, 4.4); }
+.bev-road polyline { stroke: #fbfaf6; stroke-width: 3.6; }
+.bev-cross polygon { fill: #fbfaf6; stroke: #ddd3c2; stroke-width: .25; }
+.bev-route-faint polyline, .bev-route polyline { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bev-route-faint polyline { stroke-width: var(--faint-w, 1); opacity: .3; }
+.bev-route polyline { stroke-width: var(--route-w, 1.4); }
+.bev-ego path { fill: #1f1d1a; stroke: #fff; stroke-linejoin: round; }
+.bev-scale line { stroke: #4a453d; }
+.bev-label { fill: #4a453d; font-family: inherit; font-weight: 600; }
+@media (max-width: 720px) {
+  .bev-body { grid-template-columns: minmax(0, 1fr); }
+  .bev-map { flex: none; aspect-ratio: 2.78 / 1; }
+}

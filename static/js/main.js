@@ -79,6 +79,7 @@ const SETS = {
 
   'long-horizon': {
     dir: 'videos/long-horizon',
+    bev: 'videos/long-horizon/bev.json?v=202611202100',   // ego route on the road map, synced to the videos
     tabs: [
       { id: 'uturn-01', label: 'U-Turn 1' },
       { id: 'uturn-02', label: 'U-Turn 2' },
@@ -446,6 +447,7 @@ function buildCompare(root) {
     // Stills first: each slot shows its first-frame still at once; the videos are requested only once the
     // stills are in (or after 1.5 s), so on a slow link the stills never queue behind video data.
     const tab = set.tabs[i];
+    if (bev) bev.show(tab.id);
     const stills = [];
     const waiting = [];
     panelFor[i].querySelectorAll('.slot').forEach(fig => {
@@ -487,7 +489,12 @@ function buildCompare(root) {
 
 
   if (set.tabs.length > 1) root.append(tabs);   // a single scene needs no tab
-  root.append(panels, bar);
+  const bev = set.bev ? new BevRoute(set.bev, group) : null;
+  if (bev) {
+    const body = el('div', 'bev-body');
+    body.append(panels, bev.node);
+    root.append(body, bar);
+  } else root.append(panels, bar);
 
   // Load the first tab about one screen before the block scrolls into view; play only while it is (nearly) visible.
   new IntersectionObserver((entries, ob) => {
@@ -498,6 +505,175 @@ function buildCompare(root) {
   new IntersectionObserver(entries => {
     for (const e of entries) group.setVisible(e.isIntersecting);
   }, { rootMargin: '200px 0px' }).observe(root);
+}
+
+/* ---------- BEV route (long-horizon block) ---------- */
+
+// Bird's-eye view of the ego route on the road map. The marker follows the synced videos: video time t = pose frame
+// t * fps. Tall panel beside the grid; on narrow screens a wide strip under it (the map turned 90 degrees).
+const SVGNS = 'http://www.w3.org/2000/svg';
+function sv(tag, attrs = {}, parent) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.append(n);
+  return n;
+}
+const BEV_PHASES = { r: ['Real Drive', '#3b6fb6'], t: ['U-Turn', '#e08a1e'], b: ['Return', '#c0392b'] };
+
+class BevRoute {
+  constructor(url, group) {
+    this.url = url;
+    this.group = group;
+    this.node = el('figure', 'bev');
+    this.box = el('div', 'bev-map');
+    this.cap = el('figcaption');
+    this.legend = el('div', 'bev-legend');
+    this.node.append(this.box, this.cap, this.legend);
+    this.wide = window.matchMedia('(max-width: 720px)');
+    this.wide.addEventListener('change', () => this.render());
+    new ResizeObserver(() => this.scale()).observe(this.box);
+    this.loop = this.loop.bind(this);
+  }
+
+  show(id) {
+    this.id = id;
+    if (!this.data) {
+      this.data = fetch(this.url).then(r => r.json()).then(d => { this.data = d; this.render(); }).catch(() => {});
+      return;
+    }
+    if (!(this.data instanceof Promise)) this.render();
+  }
+
+  // world (rotated scene frame, metres, y up) -> screen units (metres, y down)
+  xy(x, y) {
+    const [x0, y0, x1, y1] = this.d.box;
+    return this.isWide ? [y - y0, x - x0] : [x - x0, y1 - y];
+  }
+
+  pts(flat) {
+    const out = [];
+    for (let i = 0; i < flat.length; i += 2) out.push(this.xy(flat[i], flat[i + 1]));
+    return out;
+  }
+
+  render() {
+    const d = this.data && this.data[this.id];
+    if (!d) return;
+    this.d = d;
+    this.isWide = this.wide.matches;
+    this.node.classList.toggle('is-wide', this.isWide);
+    const [x0, y0, x1, y1] = d.box;
+    const W = this.isWide ? y1 - y0 : x1 - x0, H = this.isWide ? x1 - x0 : y1 - y0;
+    this.W = W; this.H = H;
+    this.box.textContent = '';
+    const svg = sv('svg', { viewBox: `0 0 ${W.toFixed(1)} ${H.toFixed(1)}`, preserveAspectRatio: 'xMidYMid meet', role: 'img',
+                            'aria-label': 'Bird\'s-eye view of the ego route' }, this.box);
+    this.svg = svg;
+    const P = a => a.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    sv('rect', { x: -W, y: -H, width: 3 * W, height: 3 * H, class: 'bev-ground' }, svg);
+    const gB = sv('g', { class: 'bev-blocks' }, svg);
+    d.blocks.forEach(b => sv('polygon', { points: P(this.pts(b)) }, gB));
+    const lanes = d.lanes.map(l => P(this.pts(l)));
+    const gE = sv('g', { class: 'bev-road-edge' }, svg);
+    const gR = sv('g', { class: 'bev-road' }, svg);
+    lanes.forEach(l => { sv('polyline', { points: l }, gE); sv('polyline', { points: l }, gR); });
+    const gC = sv('g', { class: 'bev-cross' }, svg);
+    d.cross.forEach(c => sv('polygon', { points: P(this.pts(c)) }, gC));
+
+    // route: faint whole route, then the travelled part on top, one polyline per phase
+    this.E = this.pts(d.ego);
+    const runs = [];
+    for (let k = 0; k < d.phase.length; k++) {
+      if (!runs.length || runs[runs.length - 1].ph !== d.phase[k]) runs.push({ ph: d.phase[k], a: Math.max(k - 1, 0), b: k });
+      else runs[runs.length - 1].b = k;
+    }
+    const gF = sv('g', { class: 'bev-route-faint' }, svg);
+    const gT = sv('g', { class: 'bev-route' }, svg);
+    runs.forEach(r => {
+      const col = BEV_PHASES[r.ph][1];
+      sv('polyline', { points: P(this.E.slice(r.a, r.b + 1)), stroke: col }, gF);
+      r.line = sv('polyline', { points: '', stroke: col }, gT);
+    });
+    this.runs = runs;
+    const s0 = this.E[0];
+    this.startDot = sv('circle', { cx: s0[0], cy: s0[1], class: 'bev-start', fill: BEV_PHASES[d.phase[0]][1] }, svg);
+    this.startTxt = sv('text', { class: 'bev-label' }, svg);
+    this.startTxt.textContent = 'Start';
+    this.scaleBar = sv('g', { class: 'bev-scale' }, svg);
+    this.ego = sv('g', { class: 'bev-ego' }, svg);
+    this.egoShape = sv('path', {}, this.ego);
+
+    const used = [...new Set(d.phase)];
+    this.legend.textContent = '';
+    (used.length > 1 ? used : ['r']).forEach(ph => {
+      const it = el('span', 'bev-key');
+      it.style.setProperty('--c', BEV_PHASES[ph][1]);
+      it.textContent = used.length > 1 ? BEV_PHASES[ph][0] : 'Ego Route';
+      this.legend.append(it);
+    });
+    this.cap.textContent = 'Bird\'s-Eye View';
+    this.k = -1;
+    this.scale();
+    if (!this.raf) this.raf = requestAnimationFrame(this.loop);
+  }
+
+  // sizes given in screen pixels -> map units (the map is drawn in metres)
+  scale() {
+    if (!this.svg) return;
+    const r = this.svg.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const u = Math.max(this.W / r.width, this.H / r.height);     // metres per pixel ('meet')
+    this.u = u;
+    this.svg.style.setProperty('--route-w', (3 * u).toFixed(3));
+    this.svg.style.setProperty('--faint-w', (2.2 * u).toFixed(3));
+    this.svg.style.setProperty('--edge-w', (3.6 + 1.6 * u).toFixed(3));
+    this.startDot.setAttribute('r', (4 * u).toFixed(2));
+    const s0 = this.E[0];
+    const fs = 11 * u;
+    this.startTxt.setAttribute('font-size', fs.toFixed(2));
+    this.startTxt.setAttribute('x', s0[0]);                       // below the start dot
+    this.startTxt.setAttribute('y', s0[1] + 8 * u + fs * 0.8);
+    this.startTxt.setAttribute('text-anchor', 'middle');
+    // scale bar: a round length near a third of the map's short side; bottom-left (tall) or top-left (wide) corner
+    const short = Math.min(this.W, this.H);
+    const len = [10, 20, 25, 50, 100].reduce((a, b) => (Math.abs(b - short * 0.3) < Math.abs(a - short * 0.3) ? b : a));
+    this.scaleBar.textContent = '';
+    const x = 10 * u, y = this.isWide ? 10 * u + fs * 1.3 : this.H - 10 * u;
+    sv('line', { x1: x, y1: y, x2: x + len, y2: y, 'stroke-width': 1.6 * u }, this.scaleBar);
+    [x, x + len].forEach(t => sv('line', { x1: t, y1: y - 3 * u, x2: t, y2: y + 0.01, 'stroke-width': 1.6 * u }, this.scaleBar));
+    const t = sv('text', { x: x + len / 2, y: y - 5 * u, 'font-size': fs.toFixed(2), 'text-anchor': 'middle', class: 'bev-label' }, this.scaleBar);
+    t.textContent = `${len} m`;
+    const L = 15 * u;   // ego marker: an arrow head 15 px long
+    this.egoShape.setAttribute('d', `M${(0.55 * L).toFixed(2)},0 L${(-0.45 * L).toFixed(2)},${(0.42 * L).toFixed(2)} L${(-0.2 * L).toFixed(2)},0 L${(-0.45 * L).toFixed(2)},${(-0.42 * L).toFixed(2)}Z`);
+    this.egoShape.setAttribute('stroke-width', (1.4 * u).toFixed(2));
+    this.k = -1;
+  }
+
+  loop() {
+    this.raf = requestAnimationFrame(this.loop);
+    if (!this.d || !this.u || !this.group.visible) return;
+    const m = this.group.master;
+    const n = this.d.n;
+    const f = Math.min(Math.max((m ? m.currentTime : 0) * this.d.fps, 0), n - 1);
+    if (f === this.k) return;
+    this.k = f;
+    const k = Math.floor(f), a = f - k, k2 = Math.min(k + 1, n - 1);
+    const p = [this.E[k][0] + a * (this.E[k2][0] - this.E[k][0]), this.E[k][1] + a * (this.E[k2][1] - this.E[k][1])];
+    // heading from the pose yaw (world, y up) turned into screen space
+    let h = this.d.yaw[k];
+    let dh = this.d.yaw[k2] - h;
+    dh = Math.atan2(Math.sin(dh), Math.cos(dh));
+    h += a * dh;
+    const c = Math.cos(h), s = Math.sin(h);
+    const ang = this.isWide ? Math.atan2(c, s) : Math.atan2(-s, c);
+    this.ego.setAttribute('transform', `translate(${p[0].toFixed(2)},${p[1].toFixed(2)}) rotate(${(ang * 180 / Math.PI).toFixed(1)})`);
+    for (const r of this.runs) {
+      if (k < r.a) { r.line.setAttribute('points', ''); continue; }
+      const seg = this.E.slice(r.a, Math.min(k, r.b) + 1);
+      if (k < r.b) seg.push(p);
+      r.line.setAttribute('points', seg.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join(' '));
+    }
+  }
 }
 
 /* ---------- teaser wipe ---------- */
