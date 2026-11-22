@@ -626,3 +626,5 @@ footer .wrap { display: flex; justify-content: center; }
   .bev-body { grid-template-columns: minmax(0, 1fr); }
   .bev-map { flex: none; aspect-ratio: 2.78 / 1; }
 }
+.footnote + .footnote { margin-top: 2px; }
+.nowrap { white-space: nowrap; }
