@@ -48,7 +48,15 @@ const SETS = {
       { id: 'left-turn', label: 'Left Turn' },
       { id: 'lane-change', label: 'Lane Change' },
     ],
+    // desktop: top row original, bottom row edited; column widths follow the clip aspects
+    // (960x640, 960x640, 640x560) so the three panels in a row share one height
+    cols: [1.5, 1.5, 640 / 560],
     rows: [
+      [['condition-original', 'Original Blocks World'], ['ours-original', 'MemOIR, Original'], ['bev-original', 'Original, Bird\'s-Eye View']],
+      [['condition-edited', 'Edited Blocks World'], ['ours-edited', 'MemOIR, Edited'], ['bev-edited', 'Edited, Bird\'s-Eye View']],
+    ],
+    // phone: keep original | edited side by side
+    phoneRows: [
       [['condition-original', 'Original Blocks World'], ['condition-edited', 'Edited Blocks World']],
       [['ours-original', 'MemOIR, Original'], ['ours-edited', 'MemOIR, Edited']],
       [['bev-original', 'Original, Bird\'s-Eye View'], ['bev-edited', 'Edited, Bird\'s-Eye View']],
@@ -414,9 +422,12 @@ function buildCompare(root) {
 
     const panel = el('div', 'panel', { role: 'tabpanel' });
     panel.hidden = i !== 0;
-    for (const row of tab.rows || set.rows) {
+    const phoneRows = PHONE && set.phoneRows;
+    for (const row of tab.rows || phoneRows || set.rows) {
       const r = el('div', 'grid-row');
       r.style.setProperty('--n', row.length);
+      if (set.cols && !phoneRows && set.cols.length === row.length)
+        r.style.setProperty('--cols', set.cols.map(c => `minmax(0, ${c}fr)`).join(' '));
       for (const [key, label] of row) {
         const fig = el('figure', 'slot' + (key.startsWith('ours') ? ' is-ours' : ''));
         const base = `${set.dir}/${tab.id}/${key}`;

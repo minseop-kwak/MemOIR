@@ -456,7 +456,7 @@ code { font-family: var(--font-mono); font-size: .86em; }
 
 .grid-row {
   display: grid;
-  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  grid-template-columns: var(--cols, repeat(var(--n), minmax(0, 1fr)));
   gap: 10px;
 }
 .grid-row + .grid-row { margin-top: 12px; }
