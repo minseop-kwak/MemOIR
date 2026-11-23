@@ -696,11 +696,6 @@ const MF = {
   W: 2400, H: 1029,
   stages: [ [0, 4600], [4600, 9600], [9600, 14200] ],   // 1 cache, 2 warp and re-embed, 3 attend
   T: 17200,                                              // hold the finished figure until the end, then replay
-  lit: [                                                 // regions left unveiled in each stage
-    [[40, 80, 270, 965], [455, 90, 818, 352], [872, 90, 1898, 252], [998, 254, 1778, 346], [1008, 340, 1722, 418], [1350, 404, 1784, 658]],
-    [[40, 80, 270, 965], [455, 90, 818, 352], [418, 352, 992, 704], [455, 680, 818, 942], [988, 452, 1282, 604], [1270, 488, 1362, 548], [1350, 404, 1784, 658]],
-    [[40, 80, 270, 965], [455, 680, 818, 942], [988, 452, 1282, 604], [1104, 596, 1166, 684], [994, 672, 1778, 770], [872, 768, 1898, 934], [1924, 84, 2352, 942]],
-  ],
   topTok: [[1102, 268], [1187, 268], [1272, 268]],       // solid instance tokens in the cached frame (63 x 64)
   topHat: [[1615, 268], [1700, 268]],                    // second instance (hatched)
   bankTok: [[1529, 490], [1591, 490], [1654, 490]],      // ID 0x3f slots (50 x 50)
@@ -759,17 +754,11 @@ class MemoryMethod {
     this.botSlots = MF.botTok.map(p => slot(p, 65, 66));
     this.aggCover = sv('rect', { x: 1012, y: 776, width: 302, height: 150, fill: '#f3f3f3', 'clip-path': 'url(#mf-bar)' }, svg);
 
-    // veils: the figure faded outside the regions of the current stage
-    const full = `M0,0H${W}V${H}H0Z`;
-    const hole = ([x0, y0, x1, y1]) => { const r = 14;
-      return `M${x0 + r},${y0}H${x1 - r}Q${x1},${y0} ${x1},${y0 + r}V${y1 - r}Q${x1},${y1} ${x1 - r},${y1}H${x0 + r}Q${x0},${y1} ${x0},${y1 - r}V${y0 + r}Q${x0},${y0} ${x0 + r},${y0}Z`; };
-    this.veils = MF.lit.map(rs => sv('path', { d: full + rs.map(hole).join(''), 'fill-rule': 'evenodd', class: 'mf-veil' }, svg));
-
     // highlights
-    this.topGlow = sv('rect', { x: 1092, y: 254, width: 254, height: 94, rx: 26, class: 'mf-glow' }, svg);
-    this.ropeGlow = sv('rect', { x: 993, y: 457, width: 284, height: 144, rx: 24, class: 'mf-glow' }, svg);
-    this.aggGlow = sv('rect', { x: 1006, y: 770, width: 768, height: 162, rx: 44, class: 'mf-glow' }, svg);
-    this.genGlow = sv('rect', { x: 1930, y: 668, width: 416, height: 266, rx: 8, class: 'mf-glow' }, svg);
+    this.topGlow = sv('rect', { x: 1088, y: 258, width: 255, height: 82, rx: 24, class: 'mf-glow' }, svg);    // outlines traced on the figure's own borders
+    this.ropeGlow = sv('rect', { x: 999, y: 462, width: 272, height: 132, rx: 22, class: 'mf-glow' }, svg);
+    this.aggGlow = sv('rect', { x: 1012, y: 776, width: 754, height: 148, rx: 40, class: 'mf-glow' }, svg);
+    this.genGlow = sv('rect', { x: 1935, y: 675, width: 400, height: 251, rx: 2, class: 'mf-glow' }, svg);
     this.trail = sv('path', { d: MF.warp, class: 'mf-trail' }, svg);
     this.trailLen = this.trail.getTotalLength();
     this.trail.style.strokeDasharray = `${this.trailLen} ${this.trailLen}`;
@@ -801,13 +790,7 @@ class MemoryMethod {
   }
 
   render(t) {
-    const S = MF.stages, fade = 380;
-    // veils: each stage's veil fades in at its start and out at its end
-    this.veils.forEach((v, i) => {
-      const [a, b] = S[i];
-      v.style.opacity = Math.min(mfSeg(t, a - (i ? fade / 2 : 0), a + fade / 2), 1 - mfSeg(t, b - fade / 2, b + fade / 2)).toFixed(3);
-    });
-
+    const S = MF.stages;
     // stage 1: instance tokens of the visible frame are copied into the token bank
     const [a1] = S[0];
     this.topGlow.style.opacity = (mfPulse(t, a1 + 250, a1 + 1450) * .95).toFixed(3);
