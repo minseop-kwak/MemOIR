@@ -687,6 +687,211 @@ class BevRoute {
   }
 }
 
+/* ---------- memory method figure: the paper figure animated stage by stage ---------- */
+/* Coordinates are pixels of static/images/memory-method/memory-method.webp (2400 x 1029): the paper figure
+   recomposed from a real scene (canvas frames, MemOIR frames, token tiles cut from the generated vehicles;
+   garage/page_memory_method/build_base.py). Every visual state is a pure function of the timeline
+   position t, so the cards can seek to any stage. */
+
+const MF = {
+  W: 2400, H: 1029,
+  stages: [ [0, 4600], [4600, 9600], [9600, 14200] ],   // 1 cache, 2 warp and re-embed, 3 attend
+  T: 17200,                                              // hold the finished figure until the end, then replay
+  lit: [                                                 // regions left unveiled in each stage
+    [[40, 80, 270, 965], [455, 90, 818, 352], [872, 90, 1898, 252], [998, 254, 1778, 346], [1008, 340, 1722, 418], [1350, 404, 1784, 658]],
+    [[40, 80, 270, 965], [455, 90, 818, 352], [418, 352, 992, 704], [455, 680, 818, 942], [988, 452, 1282, 604], [1270, 488, 1362, 548], [1350, 404, 1784, 658]],
+    [[40, 80, 270, 965], [455, 680, 818, 942], [988, 452, 1282, 604], [1104, 596, 1166, 684], [994, 672, 1778, 770], [872, 768, 1898, 934], [1924, 84, 2352, 942]],
+  ],
+  topTok: [[1102, 268], [1187, 268], [1272, 268]],       // solid instance tokens in the cached frame (63 x 64)
+  topHat: [[1615, 268], [1700, 268]],                    // second instance (hatched)
+  bankTok: [[1529, 490], [1591, 490], [1654, 490]],      // ID 0x3f slots (50 x 50)
+  bankHat: [[1529, 573], [1594, 573]],                   // ID 0xe7 slots
+  botTok: [[1016, 689], [1101, 689], [1186, 689]],       // cached tokens placed into the target frame's sequence (65 x 66)
+  rope: [1135, 528],
+  warp: 'M519,258 C600,250 700,280 732,343 C745,400 735,480 690,543 M672,553 C610,580 575,630 568,689 C562,760 545,815 521,845',
+  tok: 'static/images/memory-method/tok-',
+};
+
+const mfClamp = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const mfSeg = (t, a, b) => mfClamp((t - a) / (b - a));
+const mfEase = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const mfMix = (a, b, k) => a + (b - a) * k;
+const mfPulse = (t, a, b) => { const k = mfSeg(t, a, b); return k > 0 && k < 1 ? Math.sin(k * Math.PI) : 0; };
+
+class MemoryMethod {
+  constructor(root) {
+    this.root = root;
+    this.cards = [...document.querySelectorAll(`[data-mfig="${root.id}"]`)];
+    this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.t = this.reduce ? MF.T - 1 : 0;
+    this.playing = false; this.paused = false; this.visible = false; this.last = 0;
+    this.build();
+    this.render(this.t);
+    this.cards.forEach((c, i) => {
+      c.addEventListener('click', () => this.seek(i));
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.seek(i); } });
+    });
+    this.frame.addEventListener('click', () => this.togglePause());
+    new IntersectionObserver(es => es.forEach(e => { this.visible = e.isIntersecting; this.update(); }),
+                             { threshold: 0.35 }).observe(this.frame);
+  }
+
+  build() {
+    const W = MF.W, H = MF.H;
+    this.frame = this.root.querySelector('.mfig-canvas');
+    const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' }, this.frame);
+    const defs = sv('defs', {}, svg);
+    // token tiles carry the vehicle patches (ID 0x3f grey SUV, ID 0xe7 taxi)
+    for (const k of ['suv0', 'suv1', 'suv2', 'taxi0', 'taxi1']) {
+      const pat = sv('pattern', { id: `mf-${k}`, width: 1, height: 1, patternContentUnits: 'objectBoundingBox' }, defs);
+      sv('image', { href: `${MF.tok}${k}.jpg`, width: 1, height: 1, preserveAspectRatio: 'none' }, pat);
+    }
+    const bar = sv('clipPath', { id: 'mf-bar' }, defs);
+    sv('rect', { x: 1015, y: 779, width: 750, height: 144, rx: 38 }, bar);
+
+    // empty slots shown until a token arrives (bank, target sequence), and the not-yet-aggregated attention block
+    const slot = ([x, y], w, h) => {
+      const g = sv('g', {}, svg);
+      sv('rect', { x: x - 3, y: y - 3, width: w + 6, height: h + 6, fill: '#ffffff' }, g);
+      sv('rect', { x: x + 3, y: y + 3, width: w - 6, height: h - 6, rx: 9, class: 'mf-empty' }, g);
+      return g;
+    };
+    this.bankSlots = [...MF.bankTok.map(p => slot(p, 50, 50)), ...MF.bankHat.map(p => slot(p, 50, 50))];
+    this.botSlots = MF.botTok.map(p => slot(p, 65, 66));
+    this.aggCover = sv('rect', { x: 1012, y: 776, width: 302, height: 150, fill: '#f3f3f3', 'clip-path': 'url(#mf-bar)' }, svg);
+
+    // veils: the figure faded outside the regions of the current stage
+    const full = `M0,0H${W}V${H}H0Z`;
+    const hole = ([x0, y0, x1, y1]) => { const r = 14;
+      return `M${x0 + r},${y0}H${x1 - r}Q${x1},${y0} ${x1},${y0 + r}V${y1 - r}Q${x1},${y1} ${x1 - r},${y1}H${x0 + r}Q${x0},${y1} ${x0},${y1 - r}V${y0 + r}Q${x0},${y0} ${x0 + r},${y0}Z`; };
+    this.veils = MF.lit.map(rs => sv('path', { d: full + rs.map(hole).join(''), 'fill-rule': 'evenodd', class: 'mf-veil' }, svg));
+
+    // highlights
+    this.topGlow = sv('rect', { x: 1092, y: 254, width: 254, height: 94, rx: 26, class: 'mf-glow' }, svg);
+    this.ropeGlow = sv('rect', { x: 993, y: 457, width: 284, height: 144, rx: 24, class: 'mf-glow' }, svg);
+    this.aggGlow = sv('rect', { x: 1006, y: 770, width: 768, height: 162, rx: 44, class: 'mf-glow' }, svg);
+    this.genGlow = sv('rect', { x: 1930, y: 668, width: 416, height: 266, rx: 8, class: 'mf-glow' }, svg);
+    this.trail = sv('path', { d: MF.warp, class: 'mf-trail' }, svg);
+    this.trailLen = this.trail.getTotalLength();
+    this.trail.style.strokeDasharray = `${this.trailLen} ${this.trailLen}`;
+    this.dot = sv('circle', { r: 13, class: 'mf-dot' }, svg);
+
+    // moving tokens
+    const tok = k => sv('rect', { width: 1, height: 1, rx: 10, class: 'mf-tok', fill: `url(#mf-${k})` }, svg);
+    const suv = ['suv0', 'suv1', 'suv2'];
+    this.fly1 = suv.map(tok);
+    this.fly1h = ['taxi0', 'taxi1'].map(tok);
+    this.fly2 = suv.map(tok);
+    this.fly3 = suv.map(tok);
+
+    this.pill = el('span', 'mfig-pill'); this.pill.textContent = 'Paused';
+    this.root.querySelector('.mfig-frame').append(this.pill);
+  }
+
+  place(r, x, y, w, h, op) {
+    r.setAttribute('x', x.toFixed(1)); r.setAttribute('y', y.toFixed(1));
+    r.setAttribute('width', w.toFixed(1)); r.setAttribute('height', h.toFixed(1));
+    r.style.opacity = op;
+  }
+
+  // token flight from box a to box b (x, y, size) during [t0, t1]; visible only while moving
+  flight(r, t, t0, t1, a, b) {
+    const k = mfSeg(t, t0, t1), e = mfEase(k);
+    if (k <= 0 || k >= 1) { r.style.opacity = 0; return; }
+    const lift = Math.sin(k * Math.PI) * 30;                                   // slight arc
+    this.place(r, mfMix(a[0], b[0], e), mfMix(a[1], b[1], e) - lift, mfMix(a[2], b[2], e), mfMix(a[3], b[3], e), 1);
+  }
+
+  render(t) {
+    const S = MF.stages, fade = 380;
+    // veils: each stage's veil fades in at its start and out at its end
+    this.veils.forEach((v, i) => {
+      const [a, b] = S[i];
+      v.style.opacity = Math.min(mfSeg(t, a - (i ? fade / 2 : 0), a + fade / 2), 1 - mfSeg(t, b - fade / 2, b + fade / 2)).toFixed(3);
+    });
+
+    // stage 1: instance tokens of the visible frame are copied into the token bank
+    const [a1] = S[0];
+    this.topGlow.style.opacity = (mfPulse(t, a1 + 250, a1 + 1450) * .95).toFixed(3);
+    MF.topTok.forEach((p, i) => {
+      const t0 = a1 + 1350 + i * 140, t1 = t0 + 1250;
+      this.flight(this.fly1[i], t, t0, t1, [p[0], p[1], 63, 64], [MF.bankTok[i][0], MF.bankTok[i][1], 50, 50]);
+      this.bankSlots[i].style.opacity = t < t1 ? 1 : 0;
+    });
+    MF.topHat.forEach((p, i) => {
+      const t0 = a1 + 1800 + i * 140, t1 = t0 + 1250;
+      this.flight(this.fly1h[i], t, t0, t1, [p[0], p[1], 60, 64], [MF.bankHat[i][0], MF.bankHat[i][1], 50, 50]);
+      this.bankSlots[3 + i].style.opacity = t < t1 ? 1 : 0;
+    });
+
+    // stage 2: the box is warped to the target frame; the cached tokens get target-coordinate RoPE
+    const [a2] = S[1];
+    const w = mfEase(mfSeg(t, a2 + 300, a2 + 2500));
+    this.trail.style.strokeDashoffset = (this.trailLen * (1 - w)).toFixed(1);
+    this.trail.style.opacity = t < a2 ? 0 : t < S[1][1] ? 1 : 1 - mfSeg(t, S[1][1], S[1][1] + 400);
+    const pt = this.trail.getPointAtLength(this.trailLen * w);
+    this.dot.setAttribute('cx', pt.x.toFixed(1)); this.dot.setAttribute('cy', pt.y.toFixed(1));
+    this.dot.style.opacity = t > a2 + 250 && t < S[1][1] ? 1 : 0;
+    const [rx, ry] = MF.rope;
+    MF.bankTok.forEach((p, i) => {
+      const t0 = a2 + 2700 + i * 130, t1 = t0 + 1100;
+      this.flight(this.fly2[i], t, t0, t1, [p[0], p[1], 50, 50], [rx - 20 + (i - 1) * 46, ry - 20, 40, 40]);
+    });
+    this.ropeGlow.style.opacity = Math.max(mfPulse(t, a2 + 2500, a2 + 4300), mfPulse(t, S[2][0] + 100, S[2][0] + 900) * .7).toFixed(3);
+
+    // stage 3: re-embedded tokens join the target frame's tokens in aggregated spatial self-attention
+    const [a3] = S[2];
+    MF.botTok.forEach((p, i) => {
+      const t0 = a3 + 250 + i * 140, t1 = t0 + 1150;
+      this.flight(this.fly3[i], t, t0, t1, [rx - 20 + (i - 1) * 46, ry - 20, 40, 40], [p[0], p[1], 65, 66]);
+      this.botSlots[i].style.opacity = t < t1 ? 1 : 0;
+    });
+    const g = mfEase(mfSeg(t, a3 + 1900, a3 + 2900));
+    this.aggCover.setAttribute('x', (1012 + 302 * g).toFixed(1));
+    this.aggCover.setAttribute('width', (302 * (1 - g)).toFixed(1));
+    this.aggGlow.style.opacity = (mfPulse(t, a3 + 1800, a3 + 3200) * .9).toFixed(3);
+    this.genGlow.style.opacity = (mfPulse(t, a3 + 3000, a3 + 4500)).toFixed(3);
+
+    // cards: the active one is marked, with a progress bar
+    const cur = S.findIndex(([a, b]) => t >= a && t < b);
+    this.cards.forEach((c, i) => {
+      c.classList.toggle('is-active', i === cur);
+      c.setAttribute('aria-pressed', i === cur ? 'true' : 'false');
+      const [a, b] = S[i];
+      c.style.setProperty('--p', i === cur ? mfSeg(t, a, b).toFixed(3) : t >= b ? 1 : 0);
+    });
+    this.root.classList.toggle('is-done', cur < 0);
+  }
+
+  seek(i) {
+    // reduced motion: show the stage's end state; otherwise replay from the stage start
+    this.t = this.reduce ? MF.stages[i][1] - 1 : MF.stages[i][0] + 1;
+    this.paused = false; this.root.classList.remove('paused');
+    this.render(this.t); this.update();
+  }
+
+  togglePause() {
+    if (this.reduce) return;
+    this.paused = !this.paused;
+    this.root.classList.toggle('paused', this.paused);
+    this.update();
+  }
+
+  update() {
+    const run = this.visible && !this.paused && !this.reduce;
+    if (run && !this.playing) {
+      this.playing = true; this.last = performance.now();
+      const step = now => {
+        if (!this.playing) return;
+        this.t = (this.t + Math.min(now - this.last, 100)) % MF.T; this.last = now;
+        this.render(this.t);
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    } else if (!run) this.playing = false;
+  }
+}
+
 /* ---------- teaser wipe ---------- */
 
 function buildWipe(root) {
@@ -863,5 +1068,6 @@ document.querySelectorAll('.toc').forEach(buildToc);
 document.querySelectorAll('.compare').forEach(buildCompare);
 document.querySelectorAll('.wipe').forEach(buildWipe);
 document.querySelectorAll('.explainer').forEach(buildExplainer);
+document.querySelectorAll('.mfig').forEach(r => new MemoryMethod(r));
 document.querySelectorAll('.img-slot').forEach(buildImage);
 document.querySelectorAll('.copy').forEach(buildCopy);

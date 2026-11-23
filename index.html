@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/teaser/canvas.jpg?v=202611201215" fetchpriority="high">
   <link rel="preload" as="image" href="videos/teaser/generated.jpg?v=202611201215" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611221200">
+  <link rel="stylesheet" href="static/css/style.css?v=202611230100">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -141,24 +141,35 @@
     </ol>
 
     <h3 class="sub" id="overview-memory">Instance-level KV Memory Based Long-Horizon Generation</h3>
-    <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns.</p>
-    <div class="explainer memory-bank" data-src="videos/explainer/memory-bank.mp4?v=v6" data-poster="videos/explainer/memory-bank.jpg?v=v6" data-label="Instance-level token bank" data-autoplay="1"></div>
+    <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns. In this real scene, the grey SUV (green box) is cached while it is visible, leaves the view, and is generated with the same appearance when its block returns 15 seconds later.</p>
 
-    <div class="cols">
-      <div class="card">
-        <p class="card-k">(a) Cache</p>
-        <h4>Per-instance KV storage</h4>
+    <figure class="mfig" id="memory-method">
+      <div class="mfig-frame">
+        <div class="mfig-canvas" role="img" aria-label="Animated method figure on a real nuPlan scene. Step 1: the grey SUV's tokens in the reference frame are cached in the instance-level token bank. Step 2: when its block returns, the box is warped to the target frame and the cached tokens are re-embedded with target-coordinate RoPE. Step 3: the re-embedded tokens join the target frame's tokens in aggregated spatial self-attention, and the SUV is generated with the same appearance.">
+          <picture>
+            <source type="image/webp" srcset="static/images/memory-method/memory-method.webp?v=202611230100">
+            <img src="static/images/memory-method/memory-method.jpg?v=202611230100" alt="" width="2400" height="1029" loading="lazy" decoding="async">
+          </picture>
+        </div>
+      </div>
+      <figcaption>A real nuPlan scene: blocks-world canvas frames on the left, MemOIR generations on the right, and token tiles cut from the generated vehicles. Click the figure to pause; click a step to replay it.<span class="mfig-swipe"> Swipe sideways to see the whole figure.</span></figcaption>
+    </figure>
+
+    <div class="mcards">
+      <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
+        <span class="mcard-bar" aria-hidden="true"></span>
+        <h4><em>1</em>Per-instance KV Storage</h4>
         <p>Keys and values are stored from each instance's most visible observations, together with box-local 3D coordinates.</p>
       </div>
-      <div class="card">
-        <p class="card-k">(b) Re-embed</p>
-        <h4>Re-embedding on return</h4>
+      <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
+        <span class="mcard-bar" aria-hidden="true"></span>
+        <h4><em>2</em>Re-embedding on Return</h4>
         <p>When the instance reappears, its cached keys are re-embedded with rotary position where its block projects in the new frame.</p>
       </div>
-      <div class="card">
-        <p class="card-k">(c) Attend</p>
-        <h4>Instance-aware attention</h4>
-        <p>An instance-aware attention mask lets each query read only the memory of the instance that owns it.</p>
+      <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
+        <span class="mcard-bar" aria-hidden="true"></span>
+        <h4><em>3</em>Instance-aware Attention</h4>
+        <p>The re-embedded tokens join spatial self-attention, and an instance-aware mask lets each query read only the memory of the instance that owns it.</p>
       </div>
     </div>
 
@@ -348,7 +359,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611221200"></script>
+<script src="static/js/main.js?v=202611230100"></script>
 <script src="static/js/walkthrough.js?v=202611201215"></script>
 </body>
 </html>

@@ -628,3 +628,73 @@ footer .wrap { display: flex; justify-content: center; }
 }
 .footnote + .footnote { margin-top: 2px; }
 .nowrap { white-space: nowrap; }
+
+/* ---------- memory method figure (animated, real scene) ---------- */
+
+.mfig { margin: 22px 0 0; }
+.mfig-frame {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px -24px rgb(80 50 20 / .35);
+  overflow: hidden;
+}
+.mfig-canvas { position: relative; cursor: pointer; }
+.mfig-canvas img { display: block; width: 100%; height: auto; }
+.mfig-canvas svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mfig figcaption { margin-top: 9px; color: var(--muted); font-size: 13px; text-align: center; }
+.mfig-swipe { display: none; }
+.mfig-pill {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  padding: 4px 11px; border-radius: 999px; background: rgb(31 27 22 / .78); color: #fff;
+  font-size: 12px; font-weight: 600; letter-spacing: .02em; pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+}
+.mfig.paused .mfig-pill { opacity: 1; }
+
+.mf-veil { fill: #fff; fill-opacity: .8; opacity: 0; }
+.mf-glow { fill: none; stroke: var(--accent); stroke-width: 7; opacity: 0; }
+.mf-trail { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; opacity: 0; }
+.mf-dot { fill: var(--accent); stroke: #fff; stroke-width: 4; opacity: 0; }
+.mf-tok { stroke: #111; stroke-width: 4; opacity: 0; }
+.mf-empty { fill: #fff; stroke: #b5b5b5; stroke-width: 3; stroke-dasharray: 8 7; }
+
+.mcards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0 0;
+}
+.mcard {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: border-color .2s, background-color .2s;
+}
+.mcard:hover { border-color: var(--line-2); }
+.mcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mcard h4 { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; font-size: 17px; letter-spacing: -.01em; }
+.mcard h4 em {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-style: normal; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line);
+  transition: background-color .2s, color .2s, border-color .2s;
+}
+.mcard p { margin: 0; color: var(--ink-2); }
+.mcard-bar { position: absolute; left: 0; top: 0; height: 3px; width: calc(var(--p, 0) * 100%); background: var(--accent); opacity: .85; }
+.mcard.is-active { border-color: rgb(194 85 45 / .45); background: linear-gradient(135deg, var(--accent-wash), var(--surface) 60%); }
+.mcard.is-active h4 em { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+@media (max-width: 720px) {
+  .mfig-frame { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mfig-canvas { min-width: 760px; }
+  .mfig-swipe { display: inline; }
+  .mcards { grid-template-columns: minmax(0, 1fr); }
+}
