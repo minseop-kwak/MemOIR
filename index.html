@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/teaser/canvas.jpg?v=202611201215" fetchpriority="high">
   <link rel="preload" as="image" href="videos/teaser/generated.jpg?v=202611201215" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611230400">
+  <link rel="stylesheet" href="static/css/style.css?v=202611221200">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -142,41 +142,23 @@
 
     <h3 class="sub" id="overview-memory">Instance-level KV Memory Based Long-Horizon Generation</h3>
     <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns.</p>
+    <div class="explainer memory-bank" data-src="videos/explainer/memory-bank.mp4?v=v6" data-poster="videos/explainer/memory-bank.jpg?v=v6" data-label="Instance-level token bank" data-autoplay="1"></div>
 
-    <figure class="mfig" id="memory-method">
-      <div class="mfig-frame">
-        <div class="mfig-canvas" role="img" aria-label="Animated method figure. Step 1: the instance's tokens in the reference frame are cached in the instance-level token bank. Step 2: the instance's box is warped to the target frame and the cached tokens are re-embedded with target-coordinate RoPE. Step 3: the re-embedded tokens join the target frame's tokens in aggregated spatial self-attention.">
-          <img src="static/images/memory_figure.png?v=202611230200" alt="" width="2400" height="1029" loading="lazy" decoding="async">
-        </div>
-      </div>
-      <figcaption>Click the figure to pause; click a step to replay it.<span class="mfig-swipe"> Swipe sideways to see the whole figure.</span></figcaption>
-    </figure>
-
-    <div class="mreal" data-mfig-real="memory-method">
-      <p class="mreal-k">Real example (nuPlan), with the token fills of the figure: <span class="sw sw-veh"></span>the grey SUV, which leaves the view and returns 15 s later, and <span class="sw sw-bld"></span>a building. Each silhouette lights up when its tokens move above.</p>
-      <div class="mreal-grid">
-        <figure><div class="mreal-media"><img src="static/images/memory-method/ref-canvas.jpg?v=202611230500" alt="Blocks-world canvas of the reference frame" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="0" src="static/images/memory-method/ref-canvas-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="bld" data-panel="0" src="static/images/memory-method/ref-canvas-bld.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Reference frame · blocks world</figcaption></figure>
-        <figure><div class="mreal-media"><img src="static/images/memory-method/ref-memoir.jpg?v=202611230500" alt="MemOIR generation of the reference frame" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="1" src="static/images/memory-method/ref-memoir-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="bld" data-panel="1" src="static/images/memory-method/ref-memoir-bld.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Generated · 0.8 s</figcaption></figure>
-        <figure><div class="mreal-media"><img src="static/images/memory-method/tgt-canvas.jpg?v=202611230500" alt="Blocks-world canvas of the target frame after the SUV returns" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="2" src="static/images/memory-method/tgt-canvas-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Target frame · blocks world</figcaption></figure>
-        <figure class="is-ours"><div class="mreal-media"><img src="static/images/memory-method/tgt-memoir.jpg?v=202611230500" alt="MemOIR generation of the target frame; the returning SUV keeps its appearance" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="3" src="static/images/memory-method/tgt-memoir-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Generated · 15.8 s (SUV returns)</figcaption></figure>
-      </div>
-    </div>
-
-    <div class="mcards">
-      <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
-        <span class="mcard-bar" aria-hidden="true"></span>
-        <h4><em>1</em>Per-instance KV Storage</h4>
+    <div class="cols">
+      <div class="card">
+        <p class="card-k">(a) Cache</p>
+        <h4>Per-instance KV storage</h4>
         <p>Keys and values are stored from each instance's most visible observations, together with box-local 3D coordinates.</p>
       </div>
-      <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
-        <span class="mcard-bar" aria-hidden="true"></span>
-        <h4><em>2</em>Re-embedding on Return</h4>
+      <div class="card">
+        <p class="card-k">(b) Re-embed</p>
+        <h4>Re-embedding on return</h4>
         <p>When the instance reappears, its cached keys are re-embedded with rotary position where its block projects in the new frame.</p>
       </div>
-      <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
-        <span class="mcard-bar" aria-hidden="true"></span>
-        <h4><em>3</em>Instance-aware Attention</h4>
-        <p>The re-embedded tokens join spatial self-attention, and an instance-aware mask lets each query read only the memory of the instance that owns it.</p>
+      <div class="card">
+        <p class="card-k">(c) Attend</p>
+        <h4>Instance-aware attention</h4>
+        <p>An instance-aware attention mask lets each query read only the memory of the instance that owns it.</p>
       </div>
     </div>
 
@@ -366,7 +348,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611230400"></script>
+<script src="static/js/main.js?v=202611221200"></script>
 <script src="static/js/walkthrough.js?v=202611201215"></script>
 </body>
 </html>
