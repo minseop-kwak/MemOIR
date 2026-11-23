@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/teaser/canvas.jpg?v=202611201215" fetchpriority="high">
   <link rel="preload" as="image" href="videos/teaser/generated.jpg?v=202611201215" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611230300">
+  <link rel="stylesheet" href="static/css/style.css?v=202611230400">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -153,12 +153,12 @@
     </figure>
 
     <div class="mreal" data-mfig-real="memory-method">
-      <p class="mreal-k">Real example (nuPlan): the grey SUV (green box) leaves the view and returns 15 s later.</p>
+      <p class="mreal-k">Real example (nuPlan), with the token fills of the figure: <span class="sw sw-veh"></span>the grey SUV, which leaves the view and returns 15 s later, and <span class="sw sw-bld"></span>a building. Each silhouette lights up when its tokens move above.</p>
       <div class="mreal-grid">
-        <figure><img src="static/images/memory-method/ref-canvas.jpg?v=202611230200" alt="Blocks-world canvas of the reference frame, SUV box outlined" width="720" height="480" loading="lazy" decoding="async"><figcaption>Reference frame · blocks world</figcaption></figure>
-        <figure><img src="static/images/memory-method/ref-memoir.jpg?v=202611230200" alt="MemOIR generation of the reference frame, SUV outlined" width="720" height="480" loading="lazy" decoding="async"><figcaption>Generated · 0.8 s (SUV cached)</figcaption></figure>
-        <figure><img src="static/images/memory-method/tgt-canvas.jpg?v=202611230200" alt="Blocks-world canvas of the target frame after the SUV returns" width="720" height="480" loading="lazy" decoding="async"><figcaption>Target frame · blocks world</figcaption></figure>
-        <figure class="is-ours"><img src="static/images/memory-method/tgt-memoir.jpg?v=202611230200" alt="MemOIR generation of the target frame, the returning SUV keeps its appearance" width="720" height="480" loading="lazy" decoding="async"><figcaption>Generated · 15.8 s (SUV returns)</figcaption></figure>
+        <figure><div class="mreal-media"><img src="static/images/memory-method/ref-canvas.jpg?v=202611230500" alt="Blocks-world canvas of the reference frame" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="0" src="static/images/memory-method/ref-canvas-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="bld" data-panel="0" src="static/images/memory-method/ref-canvas-bld.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Reference frame · blocks world</figcaption></figure>
+        <figure><div class="mreal-media"><img src="static/images/memory-method/ref-memoir.jpg?v=202611230500" alt="MemOIR generation of the reference frame" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="1" src="static/images/memory-method/ref-memoir-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="bld" data-panel="1" src="static/images/memory-method/ref-memoir-bld.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Generated · 0.8 s</figcaption></figure>
+        <figure><div class="mreal-media"><img src="static/images/memory-method/tgt-canvas.jpg?v=202611230500" alt="Blocks-world canvas of the target frame after the SUV returns" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="2" src="static/images/memory-method/tgt-canvas-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Target frame · blocks world</figcaption></figure>
+        <figure class="is-ours"><div class="mreal-media"><img src="static/images/memory-method/tgt-memoir.jpg?v=202611230500" alt="MemOIR generation of the target frame; the returning SUV keeps its appearance" width="720" height="480" loading="lazy" decoding="async"><img class="mreal-sil" data-inst="veh" data-panel="3" src="static/images/memory-method/tgt-memoir-veh.png?v=202611230500" alt="" width="720" height="480" loading="lazy" decoding="async"></div><figcaption>Generated · 15.8 s (SUV returns)</figcaption></figure>
       </div>
     </div>
 
@@ -366,7 +366,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611230300"></script>
+<script src="static/js/main.js?v=202611230400"></script>
 <script src="static/js/walkthrough.js?v=202611201215"></script>
 </body>
 </html>

@@ -705,6 +705,12 @@ const MF = {
   warp: 'M661,245 C770,300 772,470 678,548 M672,553 C552,622 532,786 603,860',
   rate: 0.62,                                            // playback speed (timeline ms per real ms)
   real: [[0, 1], [0], [1, 2], [2]],                      // stages in which each real-example panel is lit
+  // windows (timeline ms) in which each silhouette is lit, per panel (ref canvas, ref MemOIR, target canvas,
+  // target MemOIR), matching the moments its tokens move in the figure; all are lit in the final hold
+  sil: {
+    veh: [[[1200, 3300], [4800, 7200]], [[1200, 3300]], [[6400, 9300]], [[9900, 14200]]],   // ID 0x3f, solid
+    bld: [[[1650, 3750]], [[1650, 3750]], [], []],                                          // ID 0xe7, hatched
+  },
 };
 
 const mfClamp = x => x < 0 ? 0 : x > 1 ? 1 : x;
@@ -718,6 +724,7 @@ class MemoryMethod {
     this.root = root;
     this.cards = [...document.querySelectorAll(`[data-mfig="${root.id}"]`)];
     this.real = [...document.querySelectorAll(`[data-mfig-real="${root.id}"] figure`)];
+    this.sil = [...document.querySelectorAll(`[data-mfig-real="${root.id}"] .mreal-sil`)];
     this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.t = this.reduce ? MF.T - 1 : 0;
     this.playing = false; this.paused = false; this.visible = false; this.last = 0;
@@ -843,6 +850,12 @@ class MemoryMethod {
     });
     this.root.classList.toggle('is-done', cur < 0);
     this.real.forEach((f, i) => f.classList.toggle('is-lit', cur < 0 || MF.real[i].includes(cur)));
+    const hold = mfSeg(t, S[2][1], S[2][1] + 350);
+    this.sil.forEach(s => {
+      let on = hold;
+      for (const [a, b] of MF.sil[s.dataset.inst][+s.dataset.panel]) on = Math.max(on, Math.min(mfSeg(t, a - 350, a), 1 - mfSeg(t, b, b + 350)));
+      s.style.opacity = (0.22 + 0.78 * on).toFixed(3);
+    });
   }
 
   seek(i) {

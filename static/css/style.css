@@ -695,10 +695,15 @@ footer .wrap { display: flex; justify-content: center; }
 .mreal { margin: 16px 0 0; }
 .mreal-k { margin: 0 0 8px; color: var(--ink-2); font-size: 14px; }
 .mreal-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.mreal figure { margin: 0; opacity: .45; transition: opacity .5s; }
+.mreal figure { margin: 0; opacity: .6; transition: opacity .5s; }
 .mreal figure.is-lit { opacity: 1; }
-.mreal img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #000; }
-.mreal figure.is-ours img { border: 2px solid var(--accent); }
+.mreal-media { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); background: #000; }
+.mreal figure.is-ours .mreal-media { border: 2px solid var(--accent); }
+.mreal-media img { display: block; width: 100%; height: auto; }
+.mreal-media .mreal-sil { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .22; pointer-events: none; }
+.mreal-k .sw { display: inline-block; width: 13px; height: 13px; margin: 0 5px -2px 2px; border: 1.5px solid #111; border-radius: 3px; }
+.mreal-k .sw-veh { background: #b4def4; }
+.mreal-k .sw-bld { background: repeating-linear-gradient(-45deg, #a9c8f2 0 3px, #fff 3px 7px); }
 .mreal figcaption { margin-top: 6px; color: var(--muted); font-size: 12.5px; text-align: center; }
 .mreal figure.is-ours figcaption { color: var(--accent-ink); font-weight: 600; }
 
