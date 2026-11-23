@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/teaser/canvas.jpg?v=202611201215" fetchpriority="high">
   <link rel="preload" as="image" href="videos/teaser/generated.jpg?v=202611201215" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611230100">
+  <link rel="stylesheet" href="static/css/style.css?v=202611230200">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -141,19 +141,26 @@
     </ol>
 
     <h3 class="sub" id="overview-memory">Instance-level KV Memory Based Long-Horizon Generation</h3>
-    <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns. In this real scene, the grey SUV (green box) is cached while it is visible, leaves the view, and is generated with the same appearance when its block returns 15 seconds later.</p>
+    <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns.</p>
 
     <figure class="mfig" id="memory-method">
       <div class="mfig-frame">
-        <div class="mfig-canvas" role="img" aria-label="Animated method figure on a real nuPlan scene. Step 1: the grey SUV's tokens in the reference frame are cached in the instance-level token bank. Step 2: when its block returns, the box is warped to the target frame and the cached tokens are re-embedded with target-coordinate RoPE. Step 3: the re-embedded tokens join the target frame's tokens in aggregated spatial self-attention, and the SUV is generated with the same appearance.">
-          <picture>
-            <source type="image/webp" srcset="static/images/memory-method/memory-method.webp?v=202611230100">
-            <img src="static/images/memory-method/memory-method.jpg?v=202611230100" alt="" width="2400" height="1029" loading="lazy" decoding="async">
-          </picture>
+        <div class="mfig-canvas" role="img" aria-label="Animated method figure. Step 1: the instance's tokens in the reference frame are cached in the instance-level token bank. Step 2: the instance's box is warped to the target frame and the cached tokens are re-embedded with target-coordinate RoPE. Step 3: the re-embedded tokens join the target frame's tokens in aggregated spatial self-attention.">
+          <img src="static/images/memory_figure.png?v=202611230200" alt="" width="2400" height="1029" loading="lazy" decoding="async">
         </div>
       </div>
-      <figcaption>A real nuPlan scene: blocks-world canvas frames on the left, MemOIR generations on the right, and token tiles cut from the generated vehicles. Click the figure to pause; click a step to replay it.<span class="mfig-swipe"> Swipe sideways to see the whole figure.</span></figcaption>
+      <figcaption>Click the figure to pause; click a step to replay it.<span class="mfig-swipe"> Swipe sideways to see the whole figure.</span></figcaption>
     </figure>
+
+    <div class="mreal" data-mfig-real="memory-method">
+      <p class="mreal-k">Real example (nuPlan): the grey SUV (green box) leaves the view and returns 15 s later.</p>
+      <div class="mreal-grid">
+        <figure><img src="static/images/memory-method/ref-canvas.jpg?v=202611230200" alt="Blocks-world canvas of the reference frame, SUV box outlined" width="720" height="480" loading="lazy" decoding="async"><figcaption>Reference frame · blocks world</figcaption></figure>
+        <figure><img src="static/images/memory-method/ref-memoir.jpg?v=202611230200" alt="MemOIR generation of the reference frame, SUV outlined" width="720" height="480" loading="lazy" decoding="async"><figcaption>Generated · 0.8 s (SUV cached)</figcaption></figure>
+        <figure><img src="static/images/memory-method/tgt-canvas.jpg?v=202611230200" alt="Blocks-world canvas of the target frame after the SUV returns" width="720" height="480" loading="lazy" decoding="async"><figcaption>Target frame · blocks world</figcaption></figure>
+        <figure class="is-ours"><img src="static/images/memory-method/tgt-memoir.jpg?v=202611230200" alt="MemOIR generation of the target frame, the returning SUV keeps its appearance" width="720" height="480" loading="lazy" decoding="async"><figcaption>Generated · 15.8 s (SUV returns)</figcaption></figure>
+      </div>
+    </div>
 
     <div class="mcards">
       <div class="mcard" role="button" tabindex="0" aria-pressed="false" data-mfig="memory-method">
@@ -359,7 +366,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611230100"></script>
+<script src="static/js/main.js?v=202611230200"></script>
 <script src="static/js/walkthrough.js?v=202611201215"></script>
 </body>
 </html>

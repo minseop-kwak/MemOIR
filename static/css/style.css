@@ -657,7 +657,8 @@ footer .wrap { display: flex; justify-content: center; }
 .mf-glow { fill: none; stroke: var(--accent); stroke-width: 7; opacity: 0; }
 .mf-trail { fill: none; stroke: var(--accent); stroke-width: 7; stroke-linecap: round; opacity: 0; }
 .mf-dot { fill: var(--accent); stroke: #fff; stroke-width: 4; opacity: 0; }
-.mf-tok { stroke: #111; stroke-width: 4; opacity: 0; }
+.mf-tok { fill: #b4def4; stroke: #111; stroke-width: 4; opacity: 0; }
+.mf-tok.mf-hat { fill: url(#mf-hatch); }
 .mf-empty { fill: #fff; stroke: #b5b5b5; stroke-width: 3; stroke-dasharray: 8 7; }
 
 .mcards {
@@ -692,7 +693,18 @@ footer .wrap { display: flex; justify-content: center; }
 .mcard.is-active { border-color: rgb(194 85 45 / .45); background: linear-gradient(135deg, var(--accent-wash), var(--surface) 60%); }
 .mcard.is-active h4 em { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+.mreal { margin: 16px 0 0; }
+.mreal-k { margin: 0 0 8px; color: var(--ink-2); font-size: 14px; }
+.mreal-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.mreal figure { margin: 0; opacity: .45; transition: opacity .5s; }
+.mreal figure.is-lit { opacity: 1; }
+.mreal img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+.mreal figure.is-ours img { border: 2px solid var(--accent); }
+.mreal figcaption { margin-top: 6px; color: var(--muted); font-size: 12.5px; text-align: center; }
+.mreal figure.is-ours figcaption { color: var(--accent-ink); font-weight: 600; }
+
 @media (max-width: 720px) {
+  .mreal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mfig-frame { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .mfig-canvas { min-width: 760px; }
   .mfig-swipe { display: inline; }

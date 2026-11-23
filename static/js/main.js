@@ -688,10 +688,9 @@ class BevRoute {
 }
 
 /* ---------- memory method figure: the paper figure animated stage by stage ---------- */
-/* Coordinates are pixels of static/images/memory-method/memory-method.webp (2400 x 1029): the paper figure
-   recomposed from a real scene (canvas frames, MemOIR frames, token tiles cut from the generated vehicles;
-   garage/page_memory_method/build_base.py). Every visual state is a pure function of the timeline
-   position t, so the cards can seek to any stage. */
+/* Coordinates are pixels of static/images/memory_figure.png (2400 x 1029), which is shown unchanged. Every
+   visual state is a pure function of the timeline position t, so the cards can seek to any stage. The real
+   example strip below the figure ([data-mfig-real]) follows the stages. */
 
 const MF = {
   W: 2400, H: 1029,
@@ -708,8 +707,9 @@ const MF = {
   bankHat: [[1529, 573], [1594, 573]],                   // ID 0xe7 slots
   botTok: [[1016, 689], [1101, 689], [1186, 689]],       // cached tokens placed into the target frame's sequence (65 x 66)
   rope: [1135, 528],
-  warp: 'M519,258 C600,250 700,280 732,343 C745,400 735,480 690,543 M672,553 C610,580 575,630 568,689 C562,760 545,815 521,845',
-  tok: 'static/images/memory-method/tok-',
+  warp: 'M661,245 C770,300 772,470 678,548 M672,553 C552,622 532,786 603,860',
+  rate: 0.62,                                            // playback speed (timeline ms per real ms)
+  real: [[0, 1], [0], [1, 2], [2]],                      // stages in which each real-example panel is lit
 };
 
 const mfClamp = x => x < 0 ? 0 : x > 1 ? 1 : x;
@@ -722,6 +722,7 @@ class MemoryMethod {
   constructor(root) {
     this.root = root;
     this.cards = [...document.querySelectorAll(`[data-mfig="${root.id}"]`)];
+    this.real = [...document.querySelectorAll(`[data-mfig-real="${root.id}"] figure`)];
     this.reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.t = this.reduce ? MF.T - 1 : 0;
     this.playing = false; this.paused = false; this.visible = false; this.last = 0;
@@ -741,11 +742,9 @@ class MemoryMethod {
     this.frame = this.root.querySelector('.mfig-canvas');
     const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' }, this.frame);
     const defs = sv('defs', {}, svg);
-    // token tiles carry the vehicle patches (ID 0x3f grey SUV, ID 0xe7 taxi)
-    for (const k of ['suv0', 'suv1', 'suv2', 'taxi0', 'taxi1']) {
-      const pat = sv('pattern', { id: `mf-${k}`, width: 1, height: 1, patternContentUnits: 'objectBoundingBox' }, defs);
-      sv('image', { href: `${MF.tok}${k}.jpg`, width: 1, height: 1, preserveAspectRatio: 'none' }, pat);
-    }
+    const hat = sv('pattern', { id: 'mf-hatch', width: 22, height: 22, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(-45)' }, defs);
+    sv('rect', { width: 22, height: 22, fill: '#ffffff' }, hat);
+    sv('rect', { width: 7, height: 22, fill: '#a9c8f2' }, hat);
     const bar = sv('clipPath', { id: 'mf-bar' }, defs);
     sv('rect', { x: 1015, y: 779, width: 750, height: 144, rx: 38 }, bar);
 
@@ -777,12 +776,11 @@ class MemoryMethod {
     this.dot = sv('circle', { r: 13, class: 'mf-dot' }, svg);
 
     // moving tokens
-    const tok = k => sv('rect', { width: 1, height: 1, rx: 10, class: 'mf-tok', fill: `url(#mf-${k})` }, svg);
-    const suv = ['suv0', 'suv1', 'suv2'];
-    this.fly1 = suv.map(tok);
-    this.fly1h = ['taxi0', 'taxi1'].map(tok);
-    this.fly2 = suv.map(tok);
-    this.fly3 = suv.map(tok);
+    const tok = hatched => sv('rect', { width: 1, height: 1, rx: 10, class: hatched ? 'mf-tok mf-hat' : 'mf-tok' }, svg);
+    this.fly1 = MF.topTok.map(() => tok(false));
+    this.fly1h = MF.topHat.map(() => tok(true));
+    this.fly2 = MF.bankTok.map(() => tok(false));
+    this.fly3 = MF.botTok.map(() => tok(false));
 
     this.pill = el('span', 'mfig-pill'); this.pill.textContent = 'Paused';
     this.root.querySelector('.mfig-frame').append(this.pill);
@@ -861,6 +859,7 @@ class MemoryMethod {
       c.style.setProperty('--p', i === cur ? mfSeg(t, a, b).toFixed(3) : t >= b ? 1 : 0);
     });
     this.root.classList.toggle('is-done', cur < 0);
+    this.real.forEach((f, i) => f.classList.toggle('is-lit', cur < 0 || MF.real[i].includes(cur)));
   }
 
   seek(i) {
@@ -883,7 +882,7 @@ class MemoryMethod {
       this.playing = true; this.last = performance.now();
       const step = now => {
         if (!this.playing) return;
-        this.t = (this.t + Math.min(now - this.last, 100)) % MF.T; this.last = now;
+        this.t = (this.t + Math.min(now - this.last, 100) * MF.rate) % MF.T; this.last = now;
         this.render(this.t);
         requestAnimationFrame(step);
       };
