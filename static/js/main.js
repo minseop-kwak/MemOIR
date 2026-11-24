@@ -743,7 +743,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611242300';
+const GALLERY_V = '202611242400';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -784,7 +784,7 @@ const GALLERY = {
       'nusc-0103-rise',
     ] },
     // MemOIR (Ours) results of "Long-Horizon Driving Video Generation with Instance Consistency", every frame at 3x speed
-    { id: 'persistence', name: 'Instance Persistence', cap: 'Drag to compare the blocks-world condition with the generated video. Minute-long generations, played at 3\u00d7 speed.', items: [
+    { id: 'persistence', name: 'Long-Horizon Generation', cap: 'Drag to compare the blocks-world condition with the generated video. Minute-long generations, played at 3\u00d7 speed.', items: [
       'uturn-01', 'uturn-02', 'uturn-03', 'straight-01', 'straight-02', 'straight-03',
     ] },
   ],
