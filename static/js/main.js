@@ -712,7 +712,10 @@ function buildWipe(root) {
       vBottom.currentTime = vTop.currentTime;
     }
   });
+  wipeDrag(root);
+}
 
+function wipeDrag(root) {
   const setPos = x => {
     const r = root.getBoundingClientRect();
     const p = Math.min(100, Math.max(0, ((x - r.left) / r.width) * 100));
@@ -729,6 +732,176 @@ function buildWipe(root) {
   });
   root.addEventListener('pointerup', () => (dragging = false));
   root.addEventListener('pointercancel', () => (dragging = false));
+}
+
+/* ---------- results gallery ----------
+   A horizontally scrolling row of categories (cover image + name), the chosen category's examples as small
+   thumbnails, and a blocks-world | generated wipe. An example plays once and the next one in the category starts
+   (wrapping to the first). Files per example, under `${GALLERY.dir}/${cat.id}/${example}/`:
+     canvas.mp4, generated.mp4 (+ .m.mp4 phone copies), canvas.jpg, generated.jpg (first frames), thumb.jpg
+   and one `${GALLERY.dir}/${cat.id}/cover.jpg` per category. */
+
+const GALLERY_V = '202611232300';
+const GALLERY = {
+  dir: 'videos/results',
+  cats: [
+    { id: 'driving', name: 'Driving World Generation', items: ['av2-downtown'] },
+    { id: 'vehicle-motion', name: 'Counterfactual Motions', items: [
+      'lyft-a009-overspeed-spin',
+      'lyft-a008-wobble',
+      'nusc-0521-spin',
+      'nusc-0521-spin-b',
+    ] },
+    { id: 'incident', name: 'Counterfactual Incident', items: [
+      'lyft-a006-spin-r-fire',
+      'lyft-a006-spin-r2-fire',
+      'lyft-a006-wobble-r-fire',
+      'lyft-a006-wobble-r2-fire',
+      'lyft-a008-spin-fire',
+      'lyft-a008-overspeed-fire',
+      'lyft-a009-overspeed-fire',
+      'lyft-a008-wobble-smoke',
+      'lyft-a008-overspeed-smoke',
+    ] },
+    { id: 'pedestrian', name: 'Pedestrian Crossings', items: [
+      'lyft-a011-jaywalk',
+      'nusc-0971-jaywalk',
+      'nusc-0627-jaywalk',
+      'av2-80da-walk',
+    ] },
+    { id: 'flying-view', name: 'Flying View Generation', items: [
+      'av2-5763-rise',
+      'av2-8184-rise',
+      'lyft-a007-rise',
+      'nusc-0559-rise',
+      'nusc-0103-rise',
+    ] },
+    { id: 'appearance', name: 'Appearance Control', items: [
+      'av2-8184-rain',
+      'av2-8184-snow',
+      'av2-8184-sunset',
+      'av2-8184-clear-b',
+      'av2-8184-rain-b',
+      'av2-8184-snow-b',
+      'av2-8184-sunset-b',
+      'av2-7cd0-rain',
+      'av2-7cd0-snow',
+      'av2-7cd0-sunset',
+      'av2-7d3f-rain',
+      'av2-7d3f-snow',
+      'av2-7d3f-sunset',
+    ] },
+  ],
+};
+
+function buildGallery(root) {
+  const cats = GALLERY.cats.filter(c => c.items.length);
+  if (!cats.length) { root.closest('section')?.remove(); document.querySelector('.toc a[href="#results"]')?.remove(); return; }
+  const url = (cat, ex, f) => `${GALLERY.dir}/${cat.id}/${ex}/${f}?v=${GALLERY_V}`;
+
+  const catRow = el('div', 'g-cats', { role: 'tablist', 'aria-label': 'Result categories' });
+  const exRow = el('div', 'g-items', { role: 'tablist', 'aria-label': 'Examples' });
+  const stage = el('div', 'wipe g-stage');
+  const bottom = el('div', 'layer bottom');
+  const top = el('div', 'layer top');
+  const vB = el('video');
+  const vT = el('video');
+  for (const v of [vB, vT]) { v.muted = true; v.playsInline = true; v.preload = 'auto'; }
+  bottom.append(vB);
+  top.append(vT);
+  const tagL = el('span', 'tag left');
+  const tagR = el('span', 'tag right');
+  tagL.textContent = 'Blocks-World';
+  tagR.textContent = 'Generated';
+  stage.append(bottom, top, el('div', 'handle'), tagL, tagR);
+  const cap = el('p', 'hero-cap');
+  cap.textContent = 'Drag to compare the blocks-world condition with the generated video.';
+  root.append(catRow, exRow, stage, cap);
+  wipeDrag(stage);
+
+  const catBtns = cats.map((cat, ci) => {
+    const b = el('button', 'g-cat', { type: 'button', role: 'tab' });
+    const cover = el('span', 'g-cover');
+    const img = el('img', '', { src: `${GALLERY.dir}/${cat.id}/cover.jpg?v=${GALLERY_V}`, alt: '', loading: 'lazy', decoding: 'async' });
+    const name = el('span', 'g-name');
+    name.textContent = cat.name;
+    cover.append(img);
+    b.append(cover, name);
+    b.addEventListener('click', () => show(ci, 0));
+    catRow.append(b);
+    return b;
+  });
+
+  let ci = -1, ii = -1, exBtns = [], token = 0, inView = true;
+
+  const scrollRow = (row, btn) => {   // horizontal only: never moves the page
+    const l = btn.offsetLeft - row.offsetLeft, r = l + btn.offsetWidth;
+    if (l < row.scrollLeft) row.scrollTo({ left: l - 8, behavior: 'smooth' });
+    else if (r > row.scrollLeft + row.clientWidth) row.scrollTo({ left: r - row.clientWidth + 8, behavior: 'smooth' });
+  };
+
+  function show(c, i) {
+    if (c !== ci) {
+      ci = c;
+      catBtns.forEach((b, k) => { b.classList.toggle('is-active', k === c); b.setAttribute('aria-selected', k === c); });
+      scrollRow(catRow, catBtns[c]);
+      exRow.replaceChildren();
+      exRow.scrollLeft = 0;
+      exBtns = cats[c].items.map((ex, k) => {
+        const b = el('button', 'g-item', { type: 'button', role: 'tab', 'aria-label': `${cats[c].name}, example ${k + 1}` });
+        b.append(el('img', '', { src: url(cats[c], ex, 'thumb.jpg'), alt: '', loading: 'lazy', decoding: 'async' }), el('span', 'g-prog'));
+        b.addEventListener('click', () => show(ci, k));
+        exRow.append(b);
+        return b;
+      });
+    }
+    ii = i;
+    exBtns.forEach((b, k) => { b.classList.toggle('is-active', k === i); b.setAttribute('aria-selected', k === i); b.lastChild.style.width = '0'; });
+    scrollRow(exRow, exBtns[i]);
+    load(cats[c], cats[c].items[i]);
+  }
+
+  function load(cat, ex) {
+    const t = ++token;
+    const vid = name => url(cat, ex, PHONE ? `${name}.m.mp4` : `${name}.mp4`);
+    let ready = 0;
+    const go = () => {
+      if (t !== token || ++ready < 2) return;
+      vB.currentTime = vT.currentTime = 0;
+      if (inView) { vB.play().catch(() => {}); vT.play().catch(() => {}); }
+    };
+    for (const [v, name] of [[vB, 'canvas'], [vT, 'generated']]) {
+      v.pause();
+      v.poster = url(cat, ex, `${name}.jpg`);
+      v.addEventListener('canplay', go, { once: true });
+      v.src = vid(name);
+    }
+  }
+
+  vT.addEventListener('timeupdate', () => {
+    if (vB.readyState >= 2 && Math.abs(vB.currentTime - vT.currentTime) > 0.1) vB.currentTime = vT.currentTime;
+  });
+  vT.addEventListener('ended', () => {
+    const n = cats[ci].items.length;
+    if (n > 1) show(ci, (ii + 1) % n);
+    else { vB.currentTime = vT.currentTime = 0; vB.play().catch(() => {}); vT.play().catch(() => {}); }
+  });
+  const tick = () => {
+    const bar = exBtns[ii]?.lastChild;
+    if (bar && vT.duration) bar.style.width = `${(vT.currentTime / vT.duration) * 100}%`;
+    if (!vT.paused) requestAnimationFrame(tick);
+  };
+  vT.addEventListener('play', () => requestAnimationFrame(tick));
+
+  new IntersectionObserver(([e]) => {
+    inView = e.isIntersecting;
+    for (const v of [vB, vT]) {
+      if (!inView) v.pause();
+      else if (v.readyState >= 3 && !v.ended) v.play().catch(() => {});
+    }
+  }, { threshold: 0.15 }).observe(stage);
+
+  show(0, 0);
 }
 
 /* ---------- explanation videos (own controls, sound allowed) ---------- */
@@ -861,7 +1034,8 @@ function buildToc(nav) {
 
 document.querySelectorAll('.toc').forEach(buildToc);
 document.querySelectorAll('.compare').forEach(buildCompare);
-document.querySelectorAll('.wipe').forEach(buildWipe);
+document.querySelectorAll('.hero .wipe').forEach(buildWipe);
+document.querySelectorAll('.gallery').forEach(buildGallery);
 document.querySelectorAll('.explainer').forEach(buildExplainer);
 document.querySelectorAll('.img-slot').forEach(buildImage);
 document.querySelectorAll('.copy').forEach(buildCopy);
