@@ -743,7 +743,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611250500';
+const GALLERY_V = '202611250600';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -756,6 +756,13 @@ const GALLERY = {
       'av2-downtown',
       // MemOIR (Ours) results of "Video Generation from a Blocks World" (lyft-matched scenes 1-8), full resolution
       'lyft-01', 'lyft-02', 'lyft-03', 'lyft-04', 'lyft-05', 'lyft-06', 'lyft-07', 'lyft-08',
+    ] },
+    { id: 'flying-view', name: 'Flying View Generation', items: [
+      'nusc-0559-rise',
+      'lyft-a007-rise',
+      'av2-5763-rise',
+      'av2-8184-rise',
+      'nusc-0103-rise',
     ] },
     { id: 'vehicle-motion', name: 'Counterfactual Motions', items: [
       'lyft-a009-overspeed-spin',
@@ -775,13 +782,6 @@ const GALLERY = {
       'nusc-0627-jaywalk',
       'av2-80da-walk',
       'nusc-0971-jaywalk',
-    ] },
-    { id: 'flying-view', name: 'Flying View Generation', items: [
-      'nusc-0559-rise',
-      'lyft-a007-rise',
-      'av2-5763-rise',
-      'av2-8184-rise',
-      'nusc-0103-rise',
     ] },
     // MemOIR (Ours) results of "Long-Horizon Driving Video Generation with Instance Consistency", every frame at 3x speed
     { id: 'persistence', name: 'Long-Horizon Generation', cap: 'Drag to compare the blocks-world condition with the generated video. Minute-long generations, played at 3\u00d7 speed.', items: [
