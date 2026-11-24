@@ -143,8 +143,8 @@ const SETS = {
     tabs: [
       { id: 'incident/lyft-a008-spin-fire', label: 'Fire 1' },
       { id: 'incident/lyft-a008-overspeed-fire', label: 'Fire 2' },
-      { id: 'incident/lyft-a011-wobble-smoke', label: 'Smoke 1' },
-      { id: 'incident/lyft-a008-wobble-smoke', label: 'Smoke 2' },
+      { id: 'incident/lyft-a008-wobble-smoke', label: 'Smoke 1' },
+      { id: 'incident/lyft-a011-wobble-smoke', label: 'Smoke 2' },
       { id: 'pedestrian/lyft-a011-jaywalk', label: 'Jaywalking 1' },
       { id: 'pedestrian/nusc-0627-jaywalk', label: 'Jaywalking 2' },
     ],
@@ -774,7 +774,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611251800';
+const GALLERY_V = '202611251900';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
