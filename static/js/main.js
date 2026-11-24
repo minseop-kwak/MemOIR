@@ -743,7 +743,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611240700';
+const GALLERY_V = '202611241000';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -757,7 +757,7 @@ const GALLERY = {
       'lyft-a008-wobble',
       'nusc-0521-spin',
     ] },
-    { id: 'incident', name: 'Counterfactual Incident', items: [
+    { id: 'incident', name: 'Counterfactual Incidents', items: [
       'lyft-a008-spin-fire',
       'lyft-a008-overspeed-fire',
       'lyft-a009-overspeed-fire',
