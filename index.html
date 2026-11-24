@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/results/appearance/av2-8184-b/grid.jpg?v=202611251100" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611251800">
+  <link rel="stylesheet" href="static/css/style.css?v=202611252000">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -107,7 +107,7 @@
     <div class="explainer summary" data-autostart="1" data-src="videos/explainer/00-summary.mp4?v=202611240020" data-poster="videos/explainer/00-summary.jpg?v=202611240020" data-label="Summary video · MemOIR end to end"></div>
 
     <h3 class="sub" id="overview-memory">Instance-level KV Memory Based Long-Horizon Generation</h3>
-    <p class="desc">Long rollouts in which each vehicle keeps its appearance when it leaves the view and returns.</p>
+    <p class="desc"><strong>Question: What happens after a U-turn?</strong> Comparative models (e.g. OmniDreams) forget and completely re-generate the path it just came through, but MemOIR retains the structure and appearance of previous chunks' frames.</p>
     <div class="explainer memory-bank" data-src="videos/explainer/memory-bank.mp4?v=v6" data-poster="videos/explainer/memory-bank.jpg?v=v6" data-label="Instance-level token bank" data-autoplay="1"></div>
 
   </div>
@@ -134,8 +134,10 @@
     <h3 class="sub" id="zero-shot">Zero-Shot Out-of-Domain Generation</h3>
     <p class="desc">Blocks-world conditioned driving video generation allows for powerful controllability and robustness, enabling the video model to generate zero-shot for out-of-domain viewpoints and various counterfactual scenarios, <strong>without being fine-tuned on any such data.</strong></p>
     <h3 class="sub" id="zero-shot-counterfactual">Counterfactual Scenario Video Generation</h3>
+    <p class="desc">Vehicle fires, smoke and jaywalking pedestrians, generated from edited blocks worlds of real drives.</p>
     <div class="compare" data-set="zeroshot-counterfactual"></div>
     <h3 class="sub" id="zero-shot-aerial">Zero-shot Out-of-Domain Camera View Generation (Aerial Views)</h3>
+    <p class="desc">The camera rises from the driver's view to an aerial view never seen in training.</p>
     <div class="compare" data-set="zeroshot-aerial"></div>
   </div>
 </section>
@@ -157,32 +159,22 @@
 
     <div class="cols">
       <div class="card">
-        <p class="card-k">(a) Perception tools</p>
-        <h4>Called by the agent on demand</h4>
-        <p class="card-lead">Each tool is a function in the agent's Python kernel; the agent decides when to call it and inspects the result.</p>
-        <ul>
-          <li><b>Depth Anything 3</b> (multi-view): metric depth and camera poses estimated from the video</li>
-          <li><b>Mask2Former</b> panoptic segmentation and <b>Mapillary Vistas</b> lane markings</li>
-          <li><b>SAM3</b> text-prompted tracking of vehicles, people, traffic lights, signs, poles, buildings and walls</li>
-          <li><b>WildDet3D</b> 3D vehicle detection, with depth within 3–6% of ground truth out to 70 m</li>
-          <li><b>RTMPose</b> pedestrian skeletons aligned to their boxes</li>
-        </ul>
+        <p class="card-k">(a) Perception</p>
+        <h4>Off-the-shelf tools, called on demand</h4>
+        <svg class="tool-ring" viewBox="0 0 360 226" role="img" aria-label="The LLM agent calls six off-the-shelf perception tools: Depth Anything 3, Mask2Former, SAM3, WildDet3D, RTMPose, Mapillary lanes"><circle class="ring" cx="180" cy="112" r="66"/><line class="spoke" x1="180" y1="112" x2="180.0" y2="46.0"/><line class="spoke" x1="180" y1="112" x2="237.2" y2="79.0"/><line class="spoke" x1="180" y1="112" x2="237.2" y2="145.0"/><line class="spoke" x1="180" y1="112" x2="180.0" y2="178.0"/><line class="spoke" x1="180" y1="112" x2="122.8" y2="145.0"/><line class="spoke" x1="180" y1="112" x2="122.8" y2="79.0"/><circle class="dot" cx="180.0" cy="46.0" r="6"/><text x="180.0" y="32.0" text-anchor="middle">Depth Anything 3</text><circle class="dot" cx="237.2" cy="79.0" r="6"/><text x="249.2" y="83.0" text-anchor="start">Mask2Former</text><circle class="dot" cx="237.2" cy="145.0" r="6"/><text x="249.2" y="149.0" text-anchor="start">SAM3</text><circle class="dot" cx="180.0" cy="178.0" r="6"/><text x="180.0" y="200.0" text-anchor="middle">WildDet3D</text><circle class="dot" cx="122.8" cy="145.0" r="6"/><text x="110.8" y="149.0" text-anchor="end">RTMPose</text><circle class="dot" cx="122.8" cy="79.0" r="6"/><text x="110.8" y="83.0" text-anchor="end">Mapillary lanes</text><circle class="hub" cx="180" cy="112" r="30"/><text class="hub-t" x="180" y="109" text-anchor="middle">LLM</text><text class="hub-t" x="180" y="124" text-anchor="middle">agent</text></svg>
       </div>
       <div class="card">
-        <p class="card-k">(b) Verification tools</p>
-        <h4>Called after every edit</h4>
-        <ul>
-          <li>Rendering tools project the current world onto the image and into a bird's-eye view at several scales, including far-range sky and road views; the agent compares the result with the video and corrects any discrepancies.</li>
-          <li>A final overlay check on the first, a middle, and the last frame concludes the loop.</li>
-        </ul>
+        <p class="card-k">(b) Closed-loop agent tool call</p>
+        <h4>Render, compare, revise</h4>
+        <p>After every edit, the agent renders the world onto the image and a bird's-eye view, compares it with the video, and revises it.</p>
       </div>
       <div class="card is-ours">
         <p class="card-k">(c) Output</p>
         <h4>Editable Python scene file</h4>
         <ul>
-          <li><b>Static world</b>: one aligned slab per building with street-side facade strips, walls, vegetation crowns, lane and road lines, poles, signs, and traffic lights with symbolic content.</li>
-          <li><b>Agents</b>, each with a persistent ID, a fixed size, and a trajectory, plus per-frame traffic-light states.</li>
-          <li>Saved as <code>scene_world.py</code> and rendered by a single shared renderer; the export–render round trip is accurate to within 10 cm, 7°, and 0.6% of pixels.</li>
+          <li><b>Static world</b>: buildings, walls, vegetation, lanes, poles, signs, traffic lights</li>
+          <li><b>Dynamic instances</b>: persistent ID, fixed size, trajectory</li>
+          <li><code>scene_world.py</code>, re-rendered within 10 cm and 7°</li>
         </ul>
       </div>
     </div>

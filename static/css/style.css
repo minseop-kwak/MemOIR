@@ -296,6 +296,14 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .card-k { margin: 0 0 8px; color: var(--muted); font-size: 11px; }
 .card h4 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.01em; }
 .card p { margin: 0; color: var(--ink-2); }
+/* 03 (a): the agent and its six perception tools */
+.tool-ring { display: block; width: 100%; max-width: 360px; margin: 6px auto 0; overflow: visible; }
+.tool-ring .ring { fill: none; stroke: var(--line-2); stroke-width: 1.5; stroke-dasharray: 3 5; }
+.tool-ring .spoke { stroke: var(--line-2); stroke-width: 1; }
+.tool-ring .dot { fill: var(--accent); }
+.tool-ring .hub { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; }
+.tool-ring text { fill: var(--ink-2); font-size: 13px; font-weight: 500; }
+.tool-ring .hub-t { fill: var(--ink); font-size: 12.5px; font-weight: 700; }
 .card ul { margin: 0; padding-left: 18px; color: var(--ink-2); }
 .card li + li { margin-top: 7px; }
 .card b { color: var(--ink); }
