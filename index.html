@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-  <link rel="preload" as="image" href="videos/results/appearance/av2-8184-b/grid.jpg?v=202611250600" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611251000">
+  <link rel="preload" as="image" href="videos/results/appearance/av2-8184-b/grid.jpg?v=202611251100" fetchpriority="high">
+  <link rel="stylesheet" href="static/css/style.css?v=202611251100">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -100,7 +100,7 @@
       <ol class="sec-lede tldr">
         <li>Almost every object in a driving scene can be abstracted as a 3D block. MemOIR generates video conditioned on this <span class="hl">“blocks world”</span>.</li>
         <li>The blocks world is also a <span class="hl">code world</span>: easy to build, easy to control. A closed-loop LLM agent with off-the-shelf tools can convert any videos or images into it, with no ground truth needed.</li>
-        <li>For long-horizon generation, <span class="hl">object-level KV caching</span> greatly reduces the memory footprint while ensuring long-term consistency of each instance.</li>
+        <li>For long-horizon generation, <span class="hl">object-level KV caching</span> greatly reduces the memory footprint while ensuring long-term consistency of each instance. <strong class="tldr-gen">This is a <a href="#general">general method</a>: it carries over to other video backbones and to domains beyond driving.</strong></li>
       </ol>
     </div>
 
@@ -297,7 +297,7 @@ scene.remove(<span class="s">"ped045"</span>)                         <span clas
   </div>
 </footer>
 
-<script src="static/js/main.js?v=202611250600"></script>
+<script src="static/js/main.js?v=202611251100"></script>
 <script src="static/js/walkthrough.js?v=202611201215"></script>
 </body>
 </html>

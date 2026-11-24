@@ -743,7 +743,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611250600';
+const GALLERY_V = '202611251100';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -1086,6 +1086,29 @@ function buildToc(nav) {
   window.addEventListener('resize', update);
   update();
 }
+
+/* ---------- in-page links: land on the target ----------
+   Blocks above a target build their videos as the smooth scroll passes them and grow, so the scroll ended short of
+   the target (e.g. ~1,200 px for #general). Re-aim until the target stays at the top; any wheel/touch/key by the reader
+   cancels the correction. */
+
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[href^="#"]');
+  const t = a && a.hash.length > 1 && document.getElementById(decodeURIComponent(a.hash.slice(1)));
+  if (!t) return;
+  const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  let n = 0, timer = 0;
+  const stop = () => { clearTimeout(timer); for (const ev of ['wheel', 'touchstart', 'keydown']) removeEventListener(ev, stop, true); };
+  const settle = () => {
+    const off = t.getBoundingClientRect().top - pad;
+    const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+    if (Math.abs(off) <= 4 || (off > 0 && atEnd) || ++n > 8) return stop();
+    t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    timer = setTimeout(settle, 700);
+  };
+  for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, stop, { capture: true, passive: true });
+  timer = setTimeout(settle, 900);
+});
 
 document.querySelectorAll('.toc').forEach(buildToc);
 document.querySelectorAll('.compare').forEach(buildCompare);
