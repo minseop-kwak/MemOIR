@@ -795,7 +795,7 @@ const GALLERY = {
 
 function buildGallery(root) {
   const cats = GALLERY.cats.filter(c => c.items.length);
-  if (!cats.length) { root.closest('section')?.remove(); document.querySelector('.toc a[href="#results"]')?.remove(); return; }
+  if (!cats.length) { root.remove(); return; }
   const url = (cat, ex, f) => `${GALLERY.dir}/${cat.id}/${ex}/${f}?v=${GALLERY_V}`;
 
   const catRow = el('div', 'g-cats', { role: 'tablist', 'aria-label': 'Result categories' });

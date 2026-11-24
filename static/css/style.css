@@ -631,7 +631,9 @@ footer .wrap { display: flex; justify-content: center; }
 
 /* ---------- results gallery ---------- */
 
-.section.results { padding-block: clamp(40px, 5vw, 64px); }
+.hero-right { min-width: 0; }
+.hero .g-cat { width: 164px; }
+.hero .g-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .g-cats, .g-items {
   display: flex;
