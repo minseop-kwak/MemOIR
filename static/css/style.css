@@ -633,8 +633,10 @@ footer .wrap { display: flex; justify-content: center; }
 
 .hero-right { min-width: 0; }
 .g-kicker { margin-bottom: 14px; }
-.hero .g-cat { width: 164px; }
-.hero .g-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hero .g-cats { gap: 10px; }
+.hero .g-cat { width: 120px; }
+.hero .g-cover { border-radius: 8px; }
+.hero .g-name { margin-top: 7px; font-size: 12px; line-height: 1.25; min-height: 2.5em; }   /* two lines reserved: cards stay aligned */
 
 .g-cats, .g-items {
   display: flex;
@@ -725,8 +727,8 @@ footer .wrap { display: flex; justify-content: center; }
 .g-gl.in { top: calc(65.3% + 6px); left: 50%; transform: translateX(-50%); }   /* just under the baked-in canvas inset */
 
 @media (max-width: 720px) {
-  .g-cat { width: 136px; }
-  .g-name { font-size: 13px; }
+  .g-cat, .hero .g-cat { width: 104px; }
+  .g-name, .hero .g-name { font-size: 11.5px; }
   .g-item { width: 68px; }
   .g-gl { padding: 2px 6px; font-size: 10px; }
   .g-gl.tl, .g-gl.tr { top: 6px; }
