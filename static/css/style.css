@@ -645,7 +645,15 @@ footer .wrap { display: flex; justify-content: center; }
   scrollbar-width: thin;
   scrollbar-color: var(--line-2) transparent;
 }
-.g-cats { gap: 14px; align-items: flex-start; padding: 4px 4px 10px; scroll-snap-type: x proximity; }
+.g-cats {          /* the padding (and matching scroll-padding) keeps the active outline, 4px outside the cover, inside the
+                      scrolled area; the negative margin keeps the covers aligned with the content edge */
+  gap: 14px;
+  align-items: flex-start;
+  margin-inline: -8px;
+  padding: 6px 8px 10px;
+  scroll-padding-inline: 8px;
+  scroll-snap-type: x proximity;
+}
 .g-cat {
   display: flex;
   flex-direction: column;
@@ -678,7 +686,7 @@ footer .wrap { display: flex; justify-content: center; }
 .g-cat.is-active .g-cover { outline-color: var(--accent); }
 .g-cat.is-active .g-name { color: var(--ink); }
 
-.g-items { gap: 8px; margin: 16px 0 14px; padding: 3px; }
+.g-items { gap: 8px; margin: 16px -5px 14px; padding: 5px; scroll-padding-inline: 5px; }
 .g-item {
   position: relative;
   flex: 0 0 auto;
