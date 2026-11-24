@@ -238,8 +238,10 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .tldr li::marker { color: var(--accent); font-weight: 700; }
 .tldr .hl { color: var(--accent); font-weight: 600; }   /* highlighted key terms */
 .tldr-gen { color: var(--ink); font-weight: 700; }   /* "general method" line, links to #general */
-.tldr-gen a { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.tldr-gen a:hover { color: var(--accent); }
+.tldr-gen a { color: var(--accent); text-decoration: none; border-radius: 4px; transition: background-color .15s; }   /* link: accent + down arrow (jumps down the page), no underline */
+.tldr-gen a::after { content: "\2009\2193"; display: inline-block; transition: transform .15s; }
+.tldr-gen a:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.tldr-gen a:hover::after { transform: translateY(2px); }
 
 
 .sub { margin: clamp(48px, 6vw, 72px) 0 10px; font-size: clamp(20px, 2vw, 24px); font-weight: 700; letter-spacing: -.015em; }
