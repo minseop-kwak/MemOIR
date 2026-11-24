@@ -453,8 +453,15 @@ code { font-family: var(--font-mono); font-size: .86em; }
   box-shadow: 0 1px 2px rgb(80 60 30 / .05);
 }
 
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+/* one row of tabs: the ones that do not fit scroll sideways (no wrapping), with a fade on the clipped side */
+.tabs { position: relative; display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 12px; padding: 2px 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs.fade-r { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 48px), transparent); }
+.tabs.fade-l { -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to left, #000 calc(100% - 48px), transparent); }
+.tabs.fade-l.fade-r { -webkit-mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
 .tab {
+  flex: none;
+  white-space: nowrap;
   padding: 6px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;

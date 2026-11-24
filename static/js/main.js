@@ -137,10 +137,17 @@ const SETS = {
     tabs: ['nusc-0559-rise', 'lyft-a007-rise', 'av2-5763-rise', 'av2-8184-rise', 'nusc-0103-rise'].map((id, i) => ({ id, label: `Scene ${i + 1}` })),
     rows: [[['canvas', 'Blocks-World Condition'], ['generated', 'MemOIR (Ours)']]],
   },
-  'zeroshot-incident': {
-    dir: 'videos/results/incident',
+  'zeroshot-counterfactual': {
+    dir: 'videos/results',
     phone: ['canvas', 'generated'],
-    tabs: ['lyft-a008-spin-fire', 'lyft-a011-wobble-smoke', 'lyft-a009-overspeed-fire', 'lyft-a008-overspeed-fire', 'lyft-a008-wobble-smoke'].map((id, i) => ({ id, label: `Scene ${i + 1}` })),
+    tabs: [
+      { id: 'incident/lyft-a008-spin-fire', label: 'Fire 1' },
+      { id: 'incident/lyft-a008-overspeed-fire', label: 'Fire 2' },
+      { id: 'incident/lyft-a011-wobble-smoke', label: 'Smoke 1' },
+      { id: 'incident/lyft-a008-wobble-smoke', label: 'Smoke 2' },
+      { id: 'pedestrian/lyft-a011-jaywalk', label: 'Jaywalking 1' },
+      { id: 'pedestrian/nusc-0627-jaywalk', label: 'Jaywalking 2' },
+    ],
     rows: [[['canvas', 'Blocks-World Condition'], ['generated', 'MemOIR (Ours)']]],
   },
 
@@ -465,6 +472,8 @@ function buildCompare(root) {
 
   function activate(i) {
     [...tabs.children].forEach((b, j) => b.setAttribute('aria-selected', j === i ? 'true' : 'false'));
+    const b = tabs.children[i];                        // bring the chosen tab (and its neighbours) into view, row only
+    if (b && tabs.scrollWidth > tabs.clientWidth) tabs.scrollTo({ left: b.offsetLeft - (tabs.clientWidth - b.offsetWidth) / 2, behavior: 'smooth' });
     panelFor.forEach((p, j) => (p.hidden = j !== i));
     group.clear();
     group.setEvents();
@@ -514,6 +523,14 @@ function buildCompare(root) {
 
 
   if (set.tabs.length > 1) root.append(tabs);   // a single scene needs no tab
+  const fadeTabs = () => {                        // fade the side where tabs are scrolled out of view
+    const max = tabs.scrollWidth - tabs.clientWidth;
+    tabs.classList.toggle('fade-l', tabs.scrollLeft > 2);
+    tabs.classList.toggle('fade-r', tabs.scrollLeft < max - 2);
+  };
+  tabs.addEventListener('scroll', fadeTabs, { passive: true });
+  addEventListener('resize', fadeTabs);
+  requestAnimationFrame(fadeTabs);
   const bev = set.bev ? new BevRoute(set.bev, group) : null;
   if (bev) {
     const body = el('div', 'bev-body');
@@ -757,7 +774,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611251600';
+const GALLERY_V = '202611251800';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
