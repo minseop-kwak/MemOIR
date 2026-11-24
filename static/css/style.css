@@ -633,10 +633,10 @@ footer .wrap { display: flex; justify-content: center; }
 
 .hero-right { min-width: 0; }
 .g-kicker { margin-bottom: 14px; }
-.hero .g-cats { gap: 10px; }
-.hero .g-cat { width: 120px; }
-.hero .g-cover { border-radius: 8px; }
-.hero .g-name { margin-top: 7px; font-size: 12px; line-height: 1.25; min-height: 2.5em; }   /* two lines reserved: cards stay aligned */
+.hero .g-cats { gap: 8px; }
+.hero .g-cat { width: 90px; }
+.hero .g-cover { border-radius: 6px; }
+.hero .g-name { margin-top: 6px; font-size: 11px; line-height: 1.25; min-height: 2.5em; }   /* two lines reserved: cards stay aligned */
 
 .g-cats, .g-items {
   display: flex;
@@ -686,15 +686,15 @@ footer .wrap { display: flex; justify-content: center; }
 .g-cat.is-active .g-cover { outline-color: var(--accent); }
 .g-cat.is-active .g-name { color: var(--ink); }
 
-.g-items { gap: 8px; margin: 16px -5px 14px; padding: 5px; scroll-padding-inline: 5px; }
+.g-items { gap: 6px; margin: 12px -5px 12px; padding: 5px; scroll-padding-inline: 5px; }
 .g-item {
   position: relative;
   flex: 0 0 auto;
-  width: 84px;
+  width: 42px;
   aspect-ratio: 3 / 2;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   overflow: hidden;
   outline: 2px solid transparent;
   outline-offset: 1px;
@@ -706,7 +706,7 @@ footer .wrap { display: flex; justify-content: center; }
 .g-item img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .g-item:hover { opacity: .9; }
 .g-item.is-active { opacity: 1; outline-color: var(--accent); }
-.g-prog { position: absolute; left: 0; bottom: 0; width: 0; height: 3px; background: var(--accent); }
+.g-prog { position: absolute; left: 0; bottom: 0; width: 0; height: 2px; background: var(--accent); }
 
 .g-stage { aspect-ratio: 3 / 2; width: min(100%, calc(80vh * 1.5)); margin-inline: auto; }
 .g-stage .layer video { background: #000; }
@@ -735,9 +735,9 @@ footer .wrap { display: flex; justify-content: center; }
 .g-gl.in { top: calc(65.3% + 6px); left: 50%; transform: translateX(-50%); }   /* just under the baked-in canvas inset */
 
 @media (max-width: 720px) {
-  .g-cat, .hero .g-cat { width: 104px; }
-  .g-name, .hero .g-name { font-size: 11.5px; }
-  .g-item { width: 68px; }
+  .g-cat, .hero .g-cat { width: 78px; }
+  .g-name, .hero .g-name { font-size: 10px; }
+  .g-item { width: 34px; }
   .g-gl { padding: 2px 6px; font-size: 10px; }
   .g-gl.tl, .g-gl.tr { top: 6px; }
   .g-gl.bl, .g-gl.br { bottom: 6px; }
