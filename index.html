@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/results/appearance/av2-8184-b/grid.jpg?v=202611250600" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611250900">
+  <link rel="stylesheet" href="static/css/style.css?v=202611251000">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -92,18 +92,17 @@
 <!-- ============================================================ 01 OVERVIEW -->
 <section class="section" id="abstract">
   <div class="wrap">
-    <div class="sec-head">
+    <div class="sec-head split">
       <div>
         <p class="kicker"><span class="kn">01</span> TL;DR</p>
         <h2 class="sec-title">Editable Code World to Long-Horizon Video with Instance-Level Memory</h2>
       </div>
+      <ol class="sec-lede tldr">
+        <li>Almost every object in a driving scene can be abstracted as a 3D block. MemOIR generates video conditioned on this <span class="hl">“blocks world”</span>.</li>
+        <li>The blocks world is also a <span class="hl">code world</span>: easy to build, easy to control. A closed-loop LLM agent with off-the-shelf tools converts videos or images into it, with no ground truth needed.</li>
+        <li>For long-horizon generation, <span class="hl">object-level KV caching</span> greatly reduces the memory footprint while improving performance.</li>
+      </ol>
     </div>
-
-    <ol class="steps tldr">
-      <li><div><span class="step-n">1</span><p>Almost every object in a driving scene can be abstracted as a 3D block. MemOIR generates video conditioned on this <span class="hl">“blocks world”</span>.</p></div></li>
-      <li><div><span class="step-n">2</span><p>The blocks world is also a <span class="hl">code world</span>: easy to build, easy to control. A closed-loop LLM agent with off-the-shelf tools converts videos or images into it, with no ground truth needed.</p></div></li>
-      <li><div><span class="step-n">3</span><p>For long-horizon generation, <span class="hl">object-level KV caching</span> greatly reduces the memory footprint while improving performance.</p></div></li>
-    </ol>
 
     <div class="explainer summary" data-autostart="1" data-src="videos/explainer/00-summary.mp4?v=202611240020" data-poster="videos/explainer/00-summary.jpg?v=202611240020" data-label="Summary video · MemOIR end to end"></div>
 

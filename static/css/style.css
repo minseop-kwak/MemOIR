@@ -233,6 +233,10 @@ code { font-family: var(--font-mono); font-size: .86em; }
 
 .sec-lede { margin: 0; color: var(--ink-2); font-size: clamp(16px, 1.4vw, 19px); line-height: 1.55; }
 .sec-lede strong { color: var(--ink); font-weight: 600; }
+.tldr { display: grid; gap: 12px; padding-left: 1.4em; }   /* 01 TL;DR: three numbered points */
+.tldr li { padding-left: .2em; }
+.tldr li::marker { color: var(--accent); font-weight: 700; }
+.tldr .hl { color: var(--accent); font-weight: 600; }   /* highlighted key terms */
 
 
 .sub { margin: clamp(48px, 6vw, 72px) 0 10px; font-size: clamp(20px, 2vw, 24px); font-weight: 700; letter-spacing: -.015em; }
@@ -265,11 +269,6 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .steps b { font-size: 22px; letter-spacing: -.02em; }
 .steps span:last-child { color: var(--ink-2); font-size: 15px; }
 .step-n { color: var(--accent-ink); font-size: 11px; }
-/* 01 TL;DR: the three points as cards, above the summary video */
-.steps.tldr { margin-bottom: 28px; }
-.steps.tldr li > div { display: flex; flex-direction: column; gap: 8px; height: 100%; padding: 22px 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.steps.tldr p { margin: 0; color: var(--ink-2); font-size: 16px; line-height: 1.5; }
-.steps.tldr .hl { color: var(--accent); font-size: inherit; font-weight: 600; }
 
 /* ---------- cards ---------- */
 
