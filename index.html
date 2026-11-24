@@ -81,7 +81,7 @@
 
 <nav class="toc" aria-label="Sections">
   <div class="wrap">
-    <a href="#abstract">TL;DR</a>
+    <a href="#abstract">Overview</a>
     <a href="#real2sim">Video → Code World</a>
     <a href="#manipulate">Controllable Generation</a>
     <a href="#sim2real">Long-Horizon Generation</a>
@@ -94,11 +94,11 @@
   <div class="wrap">
     <div class="sec-head split">
       <div>
-        <p class="kicker"><span class="kn">01</span> TL;DR</p>
+        <p class="kicker"><span class="kn">01</span> Overview</p>
         <h2 class="sec-title">Editable Code World to Long-Horizon Video with Instance-Level Memory</h2>
       </div>
       <ol class="sec-lede tldr">
-        <li>Almost every object in a driving scene can be abstracted as a 3D block. MemOIR is conditioned on this rendered <span class="hl">“blocks-world”</span> for generation.</li>
+        <li><strong class="tldr-gen">TL;DR:</strong> Almost every object in a driving scene can be abstracted as a 3D block. MemOIR is conditioned on this rendered <span class="hl">“blocks-world”</span> for generation.</li>
         <li>Blocks-world is also a <span class="hl">code world</span>, easily built, easily controlled. A closed-loop LLM agent with off-the-shelf tools can convert any videos or images into this representation, no GT needed.</li>
         <li>For long-horizon generation, <span class="hl">object-level KV caching</span> greatly reduces the memory footprint while ensuring long-term consistency of each instance. <strong class="tldr-gen">Great news: it's a <a href="#general">general methodology</a> that works across various backbones and domains beyond driving.</strong></li>
       </ol>
