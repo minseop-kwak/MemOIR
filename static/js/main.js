@@ -130,6 +130,20 @@ const SETS = {
     rows: [[['condition', 'Blocks-World Condition'], ['ours', 'MemOIR (Ours)']]],
   },
 
+  /* Zero-shot out-of-domain generation (section 02): the gallery's own Flying View and Counterfactual Incidents clips */
+  'zeroshot-aerial': {
+    dir: 'videos/results/flying-view',
+    phone: ['canvas', 'generated'],
+    tabs: ['nusc-0559-rise', 'lyft-a007-rise', 'av2-5763-rise', 'av2-8184-rise', 'nusc-0103-rise'].map((id, i) => ({ id, label: `Scene ${i + 1}` })),
+    rows: [[['canvas', 'Blocks-World Condition'], ['generated', 'MemOIR (Ours)']]],
+  },
+  'zeroshot-incident': {
+    dir: 'videos/results/incident',
+    phone: ['canvas', 'generated'],
+    tabs: ['lyft-a008-spin-fire', 'lyft-a011-wobble-smoke', 'lyft-a009-overspeed-fire', 'lyft-a008-overspeed-fire', 'lyft-a008-wobble-smoke'].map((id, i) => ({ id, label: `Scene ${i + 1}` })),
+    rows: [[['canvas', 'Blocks-World Condition'], ['generated', 'MemOIR (Ours)']]],
+  },
+
   /* Zero-shot Lyft L5 */
   'lyft-matched': {
     dir: 'videos/lyft/matched',
@@ -429,7 +443,7 @@ function buildCompare(root) {
       if (set.cols && !phoneRows && set.cols.length === row.length)
         r.style.setProperty('--cols', set.cols.map(c => `minmax(0, ${c}fr)`).join(' '));
       for (const [key, label] of row) {
-        const fig = el('figure', 'slot' + (key.startsWith('ours') ? ' is-ours' : ''));
+        const fig = el('figure', 'slot' + (key.startsWith('ours') || key === 'generated' ? ' is-ours' : ''));
         const base = `${set.dir}/${tab.id}/${key}`;
         const src = PHONE && set.phone && set.phone.includes(key) ? `${base}.m.mp4?v=${POSTER_V}` : `${base}.mp4?v=${MEDIA_V}`;
         fig.dataset.src = src;
@@ -743,7 +757,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611251100';
+const GALLERY_V = '202611251600';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
