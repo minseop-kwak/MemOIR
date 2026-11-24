@@ -238,10 +238,10 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .tldr li::marker { color: var(--accent); font-weight: 700; }
 .tldr .hl { color: var(--accent); font-weight: 600; }   /* highlighted key terms */
 .tldr-gen { color: var(--ink); font-weight: 700; }   /* "general method" line, links to #general */
-.tldr-gen a { color: var(--accent); text-decoration: none; border-radius: 4px; transition: background-color .15s; }   /* link: accent + down arrow (jumps down the page), no underline */
-.tldr-gen a::after { content: "\2009\2193"; display: inline-block; transition: transform .15s; }
-.tldr-gen a:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.tldr-gen a:hover::after { transform: translateY(2px); }
+.tldr-gen a { color: #1a56db; text-decoration: none; }   /* link: standard link blue + chain-link icon, no underline */
+.tldr-gen a::after { content: ""; display: inline-block; width: .8em; height: .8em; margin-left: .18em; vertical-align: -.06em; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71'/%3E%3Cpath d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71'/%3E%3C/svg%3E") center / contain no-repeat; }
+.tldr-gen a:hover { color: #1e40af; }
 
 
 .sub { margin: clamp(48px, 6vw, 72px) 0 10px; font-size: clamp(20px, 2vw, 24px); font-weight: 700; letter-spacing: -.015em; }
