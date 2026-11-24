@@ -205,7 +205,7 @@ car = scene.car(<span class="s">"veh017"</span>, size,
         <h2 class="sec-title">Long-Horizon Video Generation with Instance-Level KV Memory</h2>
       </div>
       <p class="sec-lede">
-        An <strong>instance-level KV memory</strong> caches each object's tokens and re-embeds them where its block reappears. It uses about <strong>24&times; fewer memory tokens</strong> than frame-level caching, and re-identifies <strong>45.6%</strong> of returning vehicles, against at most 11.0% for prior methods.
+        An <strong>instance-level KV memory</strong> caches each object's tokens and re-embeds them where its block reappears. It uses about <strong>24&times; less KV memory (GiB)</strong> than frame-level caching, and re-identifies <strong>45.6%</strong> of returning vehicles, against at most 11.0% for prior methods.
       </p>
     </div>
 
@@ -235,7 +235,7 @@ car = scene.car(<span class="s">"veh017"</span>, size,
     <div class="stats">
       <div><b>45.6%</b><span>re-identification of returning vehicles, compared with at most 11.0% for prior methods</span></div>
       <div><b>98.1%</b><span>of frames with the spin-out vehicle placed correctly</span></div>
-      <div><b>~24×</b><span>fewer memory tokens than frame-level caching</span></div>
+      <div><b>~24×</b><span>less KV memory (GiB) than frame-level caching</span></div>
       <div><b>40%</b><span>higher ego trajectory error without static instances</span></div>
     </div>
 
