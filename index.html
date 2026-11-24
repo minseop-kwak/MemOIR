@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/results/appearance/av2-8184-b/grid.jpg?v=202611251100" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611252000">
+  <link rel="stylesheet" href="static/css/style.css?v=202611252100">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -167,6 +167,7 @@
         <p class="card-k">(b) Closed-loop agent tool call</p>
         <h4>Render, compare, revise</h4>
         <p>After every edit, the agent renders the world onto the image and a bird's-eye view, compares it with the video, and revises it.</p>
+        <svg class="tool-ring loop" viewBox="0 0 360 226" role="img" aria-label="Closed loop: call a tool, render the image and bird's-eye view, compare with the video, revise the world, repeated until it matches"><defs><marker id="loop-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" class="arrowhead"/></marker></defs><path class="arc" d="M196.0 48.0 A66 66 0 0 1 244.0 96.0" marker-end="url(#loop-arrow)"/><path class="arc" d="M244.0 128.0 A66 66 0 0 1 196.0 176.0" marker-end="url(#loop-arrow)"/><path class="arc" d="M164.0 176.0 A66 66 0 0 1 116.0 128.0" marker-end="url(#loop-arrow)"/><path class="arc" d="M116.0 96.0 A66 66 0 0 1 164.0 48.0" marker-end="url(#loop-arrow)"/><circle class="dot" cx="180.0" cy="46.0" r="6"/><text x="180.0" y="32.0" text-anchor="middle">Call a tool</text><circle class="dot" cx="246.0" cy="112.0" r="6"/><text x="258.0" y="116.0" text-anchor="start">Render image + BEV</text><circle class="dot" cx="180.0" cy="178.0" r="6"/><text x="180.0" y="200.0" text-anchor="middle">Compare with video</text><circle class="dot" cx="114.0" cy="112.0" r="6"/><text x="102.0" y="116.0" text-anchor="end">Revise the world</text><circle class="hub" cx="180" cy="112" r="30"/><text class="hub-t" x="180" y="109" text-anchor="middle">until it</text><text class="hub-t" x="180" y="124" text-anchor="middle">matches</text></svg>
       </div>
       <div class="card is-ours">
         <p class="card-k">(c) Output</p>
@@ -176,6 +177,12 @@
           <li><b>Dynamic instances</b>: persistent ID, fixed size, trajectory</li>
           <li><code>scene_world.py</code>, re-rendered within 10 cm and 7°</li>
         </ul>
+        <pre class="mini-code"><code><span class="c"># scene_world.py (illustrative)</span>
+scene.building(slab, facade=[...])
+scene.lane(polyline)
+scene.light(pos, states={...})
+car = scene.car(<span class="s">"veh017"</span>, size,
+    route=[...], timing={...})</code></pre>
       </div>
     </div>
 

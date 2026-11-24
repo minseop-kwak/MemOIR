@@ -304,6 +304,13 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .tool-ring .hub { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; }
 .tool-ring text { fill: var(--ink-2); font-size: 13px; font-weight: 500; }
 .tool-ring .hub-t { fill: var(--ink); font-size: 12.5px; font-weight: 700; }
+.tool-ring.loop { margin-top: 14px; }
+.tool-ring .arc { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.tool-ring .arrowhead { fill: var(--accent); }
+.card .mini-code { margin: 16px 0 0; padding: 14px 16px; border-radius: 10px; background: var(--code-bg); color: var(--code-ink); font: 12px/1.6 var(--font-mono); overflow-x: auto; }
+.card .mini-code code { font-size: inherit; }
+.card .mini-code .c { color: #9c8f7c; }
+.card .mini-code .s { color: #f0b37e; }
 .card ul { margin: 0; padding-left: 18px; color: var(--ink-2); }
 .card li + li { margin-top: 7px; }
 .card b { color: var(--ink); }
