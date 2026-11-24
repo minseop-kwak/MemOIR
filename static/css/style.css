@@ -632,6 +632,7 @@ footer .wrap { display: flex; justify-content: center; }
 /* ---------- results gallery ---------- */
 
 .hero-right { min-width: 0; }
+.g-kicker { margin-bottom: 14px; }
 .hero .g-cat { width: 164px; }
 .hero .g-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
