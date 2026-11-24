@@ -741,19 +741,16 @@ function wipeDrag(root) {
      canvas.mp4, generated.mp4 (+ .m.mp4 phone copies), canvas.jpg, generated.jpg (first frames), thumb.jpg
    and one `${GALLERY.dir}/${cat.id}/cover.jpg` per category. A category with `grid: true` shows instead one video per
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
-   layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync.
-   An example given as an object, { id, dir, canvas, generated }, reuses another section's videos and first-frame stills
-   (`${dir}/${canvas|generated}.mp4|.jpg`, with that section's cache stamps, so they are fetched once); only its
-   thumb.jpg lives under `${GALLERY.dir}/${cat.id}/${id}/`. */
+   layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611240400';
+const GALLERY_V = '202611240500';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
     { id: 'driving', name: 'Driving World Generation', items: [
       'av2-downtown',
-      // MemOIR (Ours) results of "Video Generation from a Blocks World" (lyft-matched set)
-      ...[1, 2, 3, 4, 5, 6, 7, 8].map(k => ({ id: `lyft-0${k}`, dir: `videos/lyft/matched/scene-0${k}`, canvas: 'condition', generated: 'ours' })),
+      // MemOIR (Ours) results of "Video Generation from a Blocks World" (lyft-matched scenes 1-8), full resolution
+      'lyft-01', 'lyft-02', 'lyft-03', 'lyft-04', 'lyft-05', 'lyft-06', 'lyft-07', 'lyft-08',
     ] },
     { id: 'vehicle-motion', name: 'Counterfactual Motions', items: [
       'lyft-a009-overspeed-spin',
@@ -795,12 +792,7 @@ const GALLERY = {
 function buildGallery(root) {
   const cats = GALLERY.cats.filter(c => c.items.length);
   if (!cats.length) { root.remove(); return; }
-  const exId = ex => (typeof ex === 'string' ? ex : ex.id);
-  const url = (cat, ex, f) => `${GALLERY.dir}/${cat.id}/${exId(ex)}/${f}?v=${GALLERY_V}`;
-  const media = (cat, ex, name, still) => {          // canvas / generated video, or its first-frame still
-    if (typeof ex !== 'string') return `${ex.dir}/${ex[name]}.${still ? 'jpg' : 'mp4'}?v=${still ? POSTER_V : MEDIA_V}`;
-    return url(cat, ex, still ? `${name}.jpg` : PHONE ? `${name}.m.mp4` : `${name}.mp4`);
-  };
+  const url = (cat, ex, f) => `${GALLERY.dir}/${cat.id}/${ex}/${f}?v=${GALLERY_V}`;
 
   const catRow = el('div', 'g-cats', { role: 'tablist', 'aria-label': 'Result categories' });
   const exRow = el('div', 'g-items', { role: 'tablist', 'aria-label': 'Examples' });
@@ -897,9 +889,9 @@ function buildGallery(root) {
     }
     for (const [v, name] of [[vB, 'canvas'], [vT, 'generated']]) {
       v.pause();
-      v.poster = media(cat, ex, name, true);
+      v.poster = url(cat, ex, `${name}.jpg`);
       v.addEventListener('canplay', go, { once: true });
-      v.src = media(cat, ex, name);
+      v.src = vid(name);
     }
   }
 
