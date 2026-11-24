@@ -743,7 +743,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611241400';
+const GALLERY_V = '202611241500';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -754,8 +754,8 @@ const GALLERY = {
     ] },
     { id: 'vehicle-motion', name: 'Counterfactual Motions', items: [
       'lyft-a009-overspeed-spin',
-      'lyft-a008-wobble',
       'nusc-0521-spin',
+      'lyft-a008-wobble',
       'carla-cutin-smoke',      // Scene 1 of "Out-of-Domain Scenario Generation: Simulated Scenes with Text-Prompted Events"
     ] },
     { id: 'incident', name: 'Counterfactual Incidents', items: [
