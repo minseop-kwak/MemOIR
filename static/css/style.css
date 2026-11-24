@@ -732,7 +732,7 @@ footer .wrap { display: flex; justify-content: center; }
 .g-gl.tr { top: 10px; right: 10px; }
 .g-gl.bl { bottom: 10px; left: 10px; }
 .g-gl.br { bottom: 10px; right: 10px; }
-.g-gl.in { top: calc(65.3% + 6px); left: 50%; transform: translateX(-50%); }   /* just under the baked-in canvas inset */
+.g-gl.in { top: calc(62.3% + 6px); left: 50%; transform: translateX(-50%); }   /* just under the baked-in canvas inset */
 
 @media (max-width: 720px) {
   .g-cat, .hero .g-cat { width: 78px; }
@@ -743,5 +743,5 @@ footer .wrap { display: flex; justify-content: center; }
   .g-gl.bl, .g-gl.br { bottom: 6px; }
   .g-gl.tl, .g-gl.bl { left: 6px; }
   .g-gl.tr, .g-gl.br { right: 6px; }
-  .g-gl.in { top: calc(65.3% + 4px); }
+  .g-gl.in { top: calc(62.3% + 4px); }
 }
