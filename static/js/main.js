@@ -743,11 +743,11 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611242100';
+const GALLERY_V = '202611242300';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
-    { id: 'appearance', name: 'Structure-Aware World Generation', grid: true, items: [
+    { id: 'appearance', name: 'Blocks-Conditioned Generation', grid: true, items: [
       'av2-7cd0',
       'av2-7d3f',
       'av2-8184-b',
@@ -777,10 +777,10 @@ const GALLERY = {
       'nusc-0971-jaywalk',
     ] },
     { id: 'flying-view', name: 'Flying View Generation', items: [
+      'nusc-0559-rise',
+      'lyft-a007-rise',
       'av2-5763-rise',
       'av2-8184-rise',
-      'lyft-a007-rise',
-      'nusc-0559-rise',
       'nusc-0103-rise',
     ] },
     // MemOIR (Ours) results of "Long-Horizon Driving Video Generation with Instance Consistency", every frame at 3x speed
@@ -802,7 +802,10 @@ function buildGallery(root) {
   const top = el('div', 'layer top');
   const vB = el('video');
   const vT = el('video');
-  for (const v of [vB, vT]) { v.muted = true; v.playsInline = true; v.preload = 'auto'; }
+  for (const v of [vB, vT]) {                      // attributes as well as properties: iOS checks them for muted autoplay
+    v.muted = v.defaultMuted = true; v.playsInline = true; v.preload = 'auto';
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+  }
   bottom.append(vB);
   top.append(vT);
   const tagL = el('span', 'tag left');
@@ -828,13 +831,28 @@ function buildGallery(root) {
     const cover = el('span', 'g-cover');
     const img = el('img', '', { src: `${GALLERY.dir}/${cat.id}/cover.jpg?v=${GALLERY_V}`, alt: '', loading: 'lazy', decoding: 'async' });
     const name = el('span', 'g-name');
-    name.textContent = cat.name;
+    cat.name.split(' ').forEach((w, k) => {          // a word never breaks at its hyphen ("Blocks-Conditioned" stays whole)
+      const s = el('span', 'g-word');
+      s.textContent = w;
+      name.append(...(k ? [' ', s] : [s]));
+    });
     cover.append(img);
     b.append(cover, name);
     b.addEventListener('click', () => show(ci, 0));
     catRow.append(b);
     return b;
   });
+
+  /* Names keep to two lines: a word wider than its card (e.g. "Blocks-Conditioned") shrinks that name's font just enough. */
+  const fitNames = () => catBtns.forEach(b => {
+    const n = b.lastChild;
+    n.style.fontSize = '';
+    const w = Math.max(...[...n.children].map(s => s.getBoundingClientRect().width)), room = n.clientWidth - 2;
+    if (w > room) n.style.fontSize = `${(parseFloat(getComputedStyle(n).fontSize) * room / w).toFixed(2)}px`;
+  });
+  fitNames();
+  document.fonts?.ready.then(fitNames);
+  addEventListener('resize', fitNames);
 
   let ci = -1, ii = -1, exBtns = [], token = 0, inView = true;
 
@@ -872,10 +890,13 @@ function buildGallery(root) {
     stage.classList.toggle('is-grid', grid);
     cap.textContent = cat.cap || (grid ? CAP_GRID : CAP_WIPE);
     let ready = 0;
+    /* play() is called right after the src is set, not only on canplay: phones (iOS Safari, Android data saver) often
+       fetch no video data before play() is called, so a canplay-gated start never came and the poster stayed up. */
+    const kick = () => { if (t === token && inView) playActive(); };
     const go = () => {
       if (t !== token || ++ready < (grid ? 1 : 2)) return;
-      vB.currentTime = vT.currentTime = 0;
-      if (inView) { if (!grid) vB.play().catch(() => {}); vT.play().catch(() => {}); }
+      if (!grid && Math.abs(vB.currentTime - vT.currentTime) > 0.05) vB.currentTime = vT.currentTime;
+      kick();
     };
     if (grid) {                                      // one composited video in the top layer; the bottom one is unloaded
       vB.pause();
@@ -886,6 +907,7 @@ function buildGallery(root) {
       vT.poster = url(cat, ex, 'grid.jpg');
       vT.addEventListener('canplay', go, { once: true });
       vT.src = vid('grid');
+      kick();
       return;
     }
     for (const [v, name] of [[vB, 'canvas'], [vT, 'generated']]) {
@@ -894,7 +916,11 @@ function buildGallery(root) {
       v.addEventListener('canplay', go, { once: true });
       v.src = vid(name);
     }
+    kick();
   }
+
+  const active = () => (stage.classList.contains('is-grid') ? [vT] : [vB, vT]);
+  function playActive() { for (const v of active()) if (v.paused && !v.ended) v.play().catch(() => {}); }
 
   vT.addEventListener('timeupdate', () => {
     if (!stage.classList.contains('is-grid') && vB.readyState >= 2 && Math.abs(vB.currentTime - vT.currentTime) > 0.1) vB.currentTime = vT.currentTime;
@@ -917,11 +943,18 @@ function buildGallery(root) {
 
   new IntersectionObserver(([e]) => {
     inView = e.isIntersecting;
-    for (const v of [vB, vT]) {
-      if (!inView) v.pause();
-      else if (v.readyState >= 3 && !v.ended) v.play().catch(() => {});
-    }
+    if (inView) playActive();
+    else for (const v of [vB, vT]) v.pause();
   }, { threshold: 0.15 }).observe(stage);
+
+  /* If the browser still refuses autoplay (iOS Low Power Mode, some Android battery savers), the first touch, click or
+     key press anywhere on the page starts the gallery; a tab coming back to the foreground resumes it. */
+  const unlock = () => {
+    if (inView) playActive();
+    if (!vT.paused) for (const ev of ['touchstart', 'pointerdown', 'keydown']) document.removeEventListener(ev, unlock, true);
+  };
+  for (const ev of ['touchstart', 'pointerdown', 'keydown']) document.addEventListener(ev, unlock, { capture: true, passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && inView) playActive(); });
 
   show(0, 0);
 }

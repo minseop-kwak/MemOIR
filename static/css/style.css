@@ -686,6 +686,7 @@ footer .wrap { display: flex; justify-content: center; }
 .g-cat:hover .g-cover img { transform: scale(1.04); }
 .g-name { display: block; margin-top: 9px; font-size: 14px; font-weight: 600; line-height: 1.3; transition: color .15s; }
 .g-cat:hover .g-name { color: var(--ink-2); }
+.g-word { white-space: nowrap; }
 .g-cat.is-active .g-cover { outline-color: var(--accent); }
 .g-cat.is-active .g-name { color: var(--ink); }
 
@@ -738,7 +739,7 @@ footer .wrap { display: flex; justify-content: center; }
 .g-gl.in { top: calc(62.3% + 6px); left: 50%; transform: translateX(-50%); }   /* just under the baked-in canvas inset */
 
 @media (max-width: 720px) {
-  .g-cat, .hero .g-cat { width: 78px; }
+  .g-cat, .hero .g-cat { width: 84px; }
   .g-name, .hero .g-name { font-size: 10px; }
   .g-item { width: 34px; }
   .g-gl { padding: 2px 6px; font-size: 10px; }
