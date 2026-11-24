@@ -743,7 +743,7 @@ function wipeDrag(root) {
    example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
    layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611241700';
+const GALLERY_V = '202611241900';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -771,9 +771,9 @@ const GALLERY = {
     ] },
     { id: 'pedestrian', name: 'Pedestrian Crossings', items: [
       'lyft-a011-jaywalk',
-      'nusc-0971-jaywalk',
-      'nusc-0627-jaywalk',
       'av2-80da-walk',
+      'nusc-0627-jaywalk',
+      'nusc-0971-jaywalk',
     ] },
     { id: 'flying-view', name: 'Flying View Generation', items: [
       'av2-5763-rise',
@@ -781,6 +781,10 @@ const GALLERY = {
       'lyft-a007-rise',
       'nusc-0559-rise',
       'nusc-0103-rise',
+    ] },
+    // MemOIR (Ours) results of "Long-Horizon Driving Video Generation with Instance Consistency", every frame at 3x speed
+    { id: 'persistence', name: 'Instance Persistence', cap: 'Drag to compare the blocks-world condition with the generated video. Minute-long generations, played at 3\u00d7 speed.', items: [
+      'uturn-01', 'uturn-02', 'uturn-03', 'straight-01', 'straight-02', 'straight-03',
     ] },
   ],
 };
@@ -865,7 +869,7 @@ function buildGallery(root) {
     const vid = name => url(cat, ex, PHONE ? `${name}.m.mp4` : `${name}.mp4`);
     const grid = !!cat.grid;
     stage.classList.toggle('is-grid', grid);
-    cap.textContent = grid ? CAP_GRID : CAP_WIPE;
+    cap.textContent = cat.cap || (grid ? CAP_GRID : CAP_WIPE);
     let ready = 0;
     const go = () => {
       if (t !== token || ++ready < (grid ? 1 : 2)) return;
