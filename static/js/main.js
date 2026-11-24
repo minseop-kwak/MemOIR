@@ -750,7 +750,6 @@ const GALLERY = {
       'lyft-a009-overspeed-spin',
       'lyft-a008-wobble',
       'nusc-0521-spin',
-      'nusc-0521-spin-b',
     ] },
     { id: 'incident', name: 'Counterfactual Incident', items: [
       'lyft-a006-spin-r-fire',
