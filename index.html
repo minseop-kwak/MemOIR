@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
   <link rel="preload" as="image" href="videos/results/appearance/av2-8184-b/grid.jpg?v=202611250600" fetchpriority="high">
-  <link rel="stylesheet" href="static/css/style.css?v=202611250600">
+  <link rel="stylesheet" href="static/css/style.css?v=202611250700">
   <link rel="stylesheet" href="static/css/walkthrough.css?v=202611191956">
   <!-- Google Analytics (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E318VLRCNZ"></script>
@@ -81,7 +81,7 @@
 
 <nav class="toc" aria-label="Sections">
   <div class="wrap">
-    <a href="#abstract">Overview</a>
+    <a href="#abstract">TL;DR</a>
     <a href="#real2sim">Video → Code World</a>
     <a href="#manipulate">Controllable Generation</a>
     <a href="#sim2real">Long-Horizon Generation</a>
@@ -94,12 +94,14 @@
   <div class="wrap">
     <div class="sec-head split">
       <div>
-        <p class="kicker"><span class="kn">01</span> Overview</p>
+        <p class="kicker"><span class="kn">01</span> TL;DR</p>
         <h2 class="sec-title">Editable Code World to Long-Horizon Video with Instance-Level Memory</h2>
       </div>
-      <p class="sec-lede">
-        MemOIR converts a driving video into an <strong>editable code world with a closed-loop agent</strong> that is training-free and built on off-the-shelf models, and generates photorealistic video from it. An <strong>instance-level KV memory</strong> caches each object's tokens and re-embeds them where its block reappears, preserving instance identity over long horizons.
-      </p>
+      <ol class="sec-lede tldr">
+        <li>Nearly every object in a driving scene, from vehicles and pedestrians to buildings and trees, can be abstracted as a 3D block. MemOIR generates video conditioned on this <em>blocks world</em>.</li>
+        <li>The blocks world is also a <em>code world</em>: an editable program that is simple to build and to control. A closed-loop LLM agent with off-the-shelf tools converts a video or a single image into it, without ground-truth annotation.</li>
+        <li>For long-horizon generation, per-object KV caching and retrieval uses about 24&times; fewer memory tokens than frame-level caching, and re-identifies 45.6% of returning vehicles, against at most 11.0% for prior methods.</li>
+      </ol>
     </div>
 
     <div class="explainer summary" data-autostart="1" data-src="videos/explainer/00-summary.mp4?v=202611240020" data-poster="videos/explainer/00-summary.jpg?v=202611240020" data-label="Summary video · MemOIR end to end"></div>
