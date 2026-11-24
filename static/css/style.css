@@ -613,7 +613,7 @@ footer .wrap { display: flex; justify-content: center; }
 .card .card-lead { margin: 0 0 10px; color: var(--ink-2); }
 
 /* memory token-bank animation (overview) */
-.explainer.memory-bank { aspect-ratio: 1200 / 858; max-width: 1100px; margin: 0 auto; background: #faf7f2; }
+.explainer.memory-bank { aspect-ratio: 2160 / 1546; max-width: 1100px; margin: 0 auto; background: #faf7f2; }
 .explainer.memory-bank video { background: #faf7f2; }
 
 /* subsection inside a section (11-20): a ruled group heading with smaller experiment headings under it */
