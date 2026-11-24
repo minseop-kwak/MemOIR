@@ -234,6 +234,7 @@ code { font-family: var(--font-mono); font-size: .86em; }
 .sec-lede { margin: 0; color: var(--ink-2); font-size: clamp(16px, 1.4vw, 19px); line-height: 1.55; }
 .sec-lede strong { color: var(--ink); font-weight: 600; }
 .tldr { display: grid; gap: 12px; padding-left: 1.4em; }   /* 01 TL;DR: three numbered points */
+#abstract .sec-head.split { align-items: start; }   /* title top-aligned with the list (the list is taller than the title) */
 .tldr li { padding-left: .2em; }
 .tldr li::marker { color: var(--accent); font-weight: 700; }
 .tldr .hl { color: var(--accent); font-weight: 600; }   /* highlighted key terms */
