@@ -739,9 +739,11 @@ function wipeDrag(root) {
    thumbnails, and a blocks-world | generated wipe. An example plays once and the next one in the category starts
    (wrapping to the first). Files per example, under `${GALLERY.dir}/${cat.id}/${example}/`:
      canvas.mp4, generated.mp4 (+ .m.mp4 phone copies), canvas.jpg, generated.jpg (first frames), thumb.jpg
-   and one `${GALLERY.dir}/${cat.id}/cover.jpg` per category. */
+   and one `${GALLERY.dir}/${cat.id}/cover.jpg` per category. A category with `grid: true` shows instead one video per
+   example, grid.mp4 (+ grid.m.mp4, poster grid.jpg): four weather generations from one blocks-world canvas in a 2x2
+   layout (Clear | Rain / Snow | Sunset) with that canvas inset at the centre, baked into one file so the tiles stay in sync. */
 
-const GALLERY_V = '202611232300';
+const GALLERY_V = '202611240200';
 const GALLERY = {
   dir: 'videos/results',
   cats: [
@@ -775,20 +777,11 @@ const GALLERY = {
       'nusc-0559-rise',
       'nusc-0103-rise',
     ] },
-    { id: 'appearance', name: 'Appearance Control', items: [
-      'av2-8184-rain',
-      'av2-8184-snow',
-      'av2-8184-sunset',
-      'av2-8184-clear-b',
-      'av2-8184-rain-b',
-      'av2-8184-snow-b',
-      'av2-8184-sunset-b',
-      'av2-7cd0-rain',
-      'av2-7cd0-snow',
-      'av2-7cd0-sunset',
-      'av2-7d3f-rain',
-      'av2-7d3f-snow',
-      'av2-7d3f-sunset',
+    { id: 'appearance', name: 'Appearance Control', grid: true, items: [
+      'av2-8184',
+      'av2-7cd0',
+      'av2-7d3f',
+      'av2-8184-b',
     ] },
   ],
 };
@@ -812,9 +805,17 @@ function buildGallery(root) {
   const tagR = el('span', 'tag right');
   tagL.textContent = 'Blocks-World';
   tagR.textContent = 'Generated';
-  stage.append(bottom, top, el('div', 'handle'), tagL, tagR);
+  const gridTags = el('div', 'g-glabels');
+  for (const [cls, txt] of [['tl', 'Clear'], ['tr', 'Rain'], ['bl', 'Snow'], ['br', 'Sunset'], ['in', 'Blocks-World (shared)']]) {
+    const t = el('span', `g-gl ${cls}`);
+    t.textContent = txt;
+    gridTags.append(t);
+  }
+  stage.append(bottom, top, el('div', 'handle'), tagL, tagR, gridTags);
   const cap = el('p', 'hero-cap');
-  cap.textContent = 'Drag to compare the blocks-world condition with the generated video.';
+  const CAP_WIPE = 'Drag to compare the blocks-world condition with the generated video.';
+  const CAP_GRID = 'One blocks-world canvas, four weather prompts.';
+  cap.textContent = CAP_WIPE;
   root.append(catRow, exRow, stage, cap);
   wipeDrag(stage);
 
@@ -863,12 +864,26 @@ function buildGallery(root) {
   function load(cat, ex) {
     const t = ++token;
     const vid = name => url(cat, ex, PHONE ? `${name}.m.mp4` : `${name}.mp4`);
+    const grid = !!cat.grid;
+    stage.classList.toggle('is-grid', grid);
+    cap.textContent = grid ? CAP_GRID : CAP_WIPE;
     let ready = 0;
     const go = () => {
-      if (t !== token || ++ready < 2) return;
+      if (t !== token || ++ready < (grid ? 1 : 2)) return;
       vB.currentTime = vT.currentTime = 0;
-      if (inView) { vB.play().catch(() => {}); vT.play().catch(() => {}); }
+      if (inView) { if (!grid) vB.play().catch(() => {}); vT.play().catch(() => {}); }
     };
+    if (grid) {                                      // one composited video in the top layer; the bottom one is unloaded
+      vB.pause();
+      vB.removeAttribute('src');
+      vB.removeAttribute('poster');
+      vB.load();
+      vT.pause();
+      vT.poster = url(cat, ex, 'grid.jpg');
+      vT.addEventListener('canplay', go, { once: true });
+      vT.src = vid('grid');
+      return;
+    }
     for (const [v, name] of [[vB, 'canvas'], [vT, 'generated']]) {
       v.pause();
       v.poster = url(cat, ex, `${name}.jpg`);
@@ -878,12 +893,16 @@ function buildGallery(root) {
   }
 
   vT.addEventListener('timeupdate', () => {
-    if (vB.readyState >= 2 && Math.abs(vB.currentTime - vT.currentTime) > 0.1) vB.currentTime = vT.currentTime;
+    if (!stage.classList.contains('is-grid') && vB.readyState >= 2 && Math.abs(vB.currentTime - vT.currentTime) > 0.1) vB.currentTime = vT.currentTime;
   });
   vT.addEventListener('ended', () => {
     const n = cats[ci].items.length;
     if (n > 1) show(ci, (ii + 1) % n);
-    else { vB.currentTime = vT.currentTime = 0; vB.play().catch(() => {}); vT.play().catch(() => {}); }
+    else {
+      vB.currentTime = vT.currentTime = 0;
+      if (!stage.classList.contains('is-grid')) vB.play().catch(() => {});
+      vT.play().catch(() => {});
+    }
   });
   const tick = () => {
     const bar = exBtns[ii]?.lastChild;

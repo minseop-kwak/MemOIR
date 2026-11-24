@@ -702,8 +702,36 @@ footer .wrap { display: flex; justify-content: center; }
 .g-stage .layer video { background: #000; }
 .gallery .hero-cap { margin-top: 12px; }
 
+/* 2x2 weather grid (categories with grid: true): one composited video, labels on top */
+.g-stage.is-grid { cursor: default; }
+.g-stage.is-grid .layer.top { clip-path: none; }
+.g-stage.is-grid .layer.bottom, .g-stage.is-grid .handle, .g-stage.is-grid > .tag { display: none; }
+.g-glabels { display: none; position: absolute; inset: 0; pointer-events: none; }
+.g-stage.is-grid .g-glabels { display: block; }
+.g-gl {
+  position: absolute;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: rgb(31 27 22 / .7);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.g-gl.tl { top: 10px; left: 10px; }
+.g-gl.tr { top: 10px; right: 10px; }
+.g-gl.bl { bottom: 10px; left: 10px; }
+.g-gl.br { bottom: 10px; right: 10px; }
+.g-gl.in { top: calc(65.3% + 6px); left: 50%; transform: translateX(-50%); }   /* just under the baked-in canvas inset */
+
 @media (max-width: 720px) {
   .g-cat { width: 136px; }
   .g-name { font-size: 13px; }
   .g-item { width: 68px; }
+  .g-gl { padding: 2px 6px; font-size: 10px; }
+  .g-gl.tl, .g-gl.tr { top: 6px; }
+  .g-gl.bl, .g-gl.br { bottom: 6px; }
+  .g-gl.tl, .g-gl.bl { left: 6px; }
+  .g-gl.tr, .g-gl.br { right: 6px; }
+  .g-gl.in { top: calc(65.3% + 4px); }
 }
