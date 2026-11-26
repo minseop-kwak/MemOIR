@@ -182,7 +182,7 @@ const SETS = {
     ],
     rows: [
       [['condition', 'Condition (Depth)'], ['real', 'Real Video']],
-      [['no-memory', 'Wan2.1-VACE (No Memory)'], ['ours', 'With Instance Memory (Ours)']],
+      [['no-memory', 'Wan2.1-VACE (Naive)'], ['ours', 'With Instance Memory (Ours)']],
     ],
   },
   'wan-faces': {
